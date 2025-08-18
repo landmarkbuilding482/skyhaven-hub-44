@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Eye, Upload, Edit, Trash2, FileText, Plus } from "lucide-react";
+import { Eye, Upload, Edit, Trash2, FileText, Plus, Download, X } from "lucide-react";
 import { format } from "date-fns";
 
 interface LeaseAgreement {
@@ -34,12 +34,23 @@ interface LeaseFormData {
   terms_summary: string;
 }
 
+interface PreviewModalState {
+  isOpen: boolean;
+  fileUrl: string | null;
+  fileName: string;
+}
+
 export const LeaseAgreementsTable = () => {
   const [leases, setLeases] = useState<LeaseAgreement[]>([]);
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLease, setEditingLease] = useState<LeaseAgreement | null>(null);
+  const [previewModal, setPreviewModal] = useState<PreviewModalState>({
+    isOpen: false,
+    fileUrl: null,
+    fileName: ''
+  });
   const [formData, setFormData] = useState<LeaseFormData>({
     tenant_id: "",
     lease_start: "",
@@ -98,6 +109,34 @@ export const LeaseAgreementsTable = () => {
         return;
       }
 
+      // Get the public URL for the file
+      const { data } = supabase.storage
+        .from('contracts')
+        .getPublicUrl(lease.contract_file_path);
+
+      if (!data.publicUrl) {
+        toast.error('Failed to get file URL');
+        return;
+      }
+
+      setPreviewModal({
+        isOpen: true,
+        fileUrl: data.publicUrl,
+        fileName: `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`
+      });
+    } catch (error) {
+      console.error('Error viewing contract:', error);
+      toast.error('Failed to view contract');
+    }
+  };
+
+  const handleDownloadContract = async (lease: LeaseAgreement) => {
+    try {
+      if (!lease.contract_file_path) {
+        toast.error('No contract file available');
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('contracts')
         .download(lease.contract_file_path);
@@ -109,23 +148,46 @@ export const LeaseAgreementsTable = () => {
       }
 
       const url = URL.createObjectURL(data);
-      window.open(url, '_blank');
-      
-      // Clean up the URL after a delay to free memory
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Contract downloaded successfully');
     } catch (error) {
-      console.error('Error viewing contract:', error);
-      toast.error('Failed to view contract');
+      console.error('Error downloading contract:', error);
+      toast.error('Failed to download contract');
     }
   };
 
   const handleUploadContract = async (lease: LeaseAgreement, file: File) => {
     try {
-      const filePath = `contracts/${lease.tenant_id}_lease_agreement.pdf`;
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        toast.error('Please upload a PDF file only');
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+
+      const timestamp = new Date().getTime();
+      const filePath = `contracts/${lease.tenant_id}_lease_agreement_${timestamp}.pdf`;
       
+      toast.info('Uploading contract...');
+
       const { error: uploadError } = await supabase.storage
         .from('contracts')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: 'application/pdf'
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
@@ -334,6 +396,51 @@ export const LeaseAgreementsTable = () => {
             </TableBody>
           </Table>
         )}
+
+        {/* Document Preview Modal */}
+        <Dialog open={previewModal.isOpen} onOpenChange={(open) => setPreviewModal(prev => ({ ...prev, isOpen: open }))}>
+          <DialogContent className="max-w-4xl h-[80vh]">
+            <DialogHeader className="flex flex-row items-center justify-between">
+              <DialogTitle>{previewModal.fileName}</DialogTitle>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    const currentLease = leases.find(lease => {
+                      const { data } = supabase.storage.from('contracts').getPublicUrl(lease.contract_file_path || '');
+                      return data.publicUrl === previewModal.fileUrl;
+                    });
+                    if (currentLease) handleDownloadContract(currentLease);
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+                <Button
+                  onClick={() => setPreviewModal(prev => ({ ...prev, isOpen: false }))}
+                  size="sm"
+                  variant="outline"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 w-full h-full border rounded">
+              {previewModal.fileUrl ? (
+                <iframe
+                  src={previewModal.fileUrl}
+                  className="w-full h-full"
+                  title="Contract Preview"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  Loading preview...
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent>
