@@ -13,7 +13,6 @@ const AdminDataTables = () => {
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
-    { value: "tenants", label: "Tenants Table (Sample)" },
     { value: "leaseAgreements", label: "Lease Agreements Table" },
     { value: "rentPayments", label: "Rent Payments Table" },
     { value: "occupancy", label: "Occupancy Table" },
@@ -29,11 +28,6 @@ const AdminDataTables = () => {
 
   // Mock data for all tables
   const mockData = {
-    tenants: [
-      { id: "T001", name: "TechCorp Solutions", floor: "5", spaceType: "Office", businessType: "Technology", leaseStart: "2023-01-15", leaseEnd: "2026-01-14", monthlyRent: "$5,200", contactInfo: "contact@techcorp.com", status: "Active" },
-      { id: "T002", name: "Fashion Boutique", floor: "1", spaceType: "Retail", businessType: "Fashion", leaseStart: "2023-03-01", leaseEnd: "2025-02-28", monthlyRent: "$3,800", contactInfo: "info@fashionboutique.com", status: "Active" },
-      { id: "T003", name: "Legal Associates", floor: "8", spaceType: "Office", businessType: "Legal Services", leaseStart: "2022-06-01", leaseEnd: "2025-05-31", monthlyRent: "$6,500", contactInfo: "admin@legalassoc.com", status: "Active" },
-    ],
     leaseAgreements: [
       { id: "L001", tenantId: "T001", floor: "5", leaseStart: "2023-01-15", leaseEnd: "2026-01-14", deposit: "$15,600", rentAmount: "$5,200", termsSummary: "3-year commercial lease with annual 3% increase", renewalDate: "2025-10-15" },
       { id: "L002", tenantId: "T002", floor: "1", leaseStart: "2023-03-01", leaseEnd: "2025-02-28", deposit: "$11,400", rentAmount: "$3,800", termsSummary: "2-year retail lease with option to extend", renewalDate: "2024-12-01" },
@@ -135,44 +129,6 @@ const AdminDataTables = () => {
     );
 
     switch (selectedTable) {
-      case 'tenants':
-        return (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tenant ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Space Type</TableHead>
-                <TableHead>Business Type</TableHead>
-                <TableHead>Lease Start</TableHead>
-                <TableHead>Lease End</TableHead>
-                <TableHead>Monthly Rent</TableHead>
-                <TableHead>Contact Info</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.map((tenant: any) => (
-                <TableRow key={tenant.id}>
-                  <TableCell className="font-medium">{tenant.id}</TableCell>
-                  <TableCell>{tenant.name}</TableCell>
-                  <TableCell>{tenant.floor}</TableCell>
-                  <TableCell>{tenant.spaceType}</TableCell>
-                  <TableCell>{tenant.businessType}</TableCell>
-                  <TableCell>{tenant.leaseStart}</TableCell>
-                  <TableCell>{tenant.leaseEnd}</TableCell>
-                  <TableCell className="font-medium">{tenant.monthlyRent}</TableCell>
-                  <TableCell>{tenant.contactInfo}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(tenant.status)}>{tenant.status}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        );
-
       case 'leaseAgreements':
         return (
           <Table>
