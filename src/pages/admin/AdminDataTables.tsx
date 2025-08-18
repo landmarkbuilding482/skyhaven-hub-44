@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Eye, Upload, Edit, Trash2 } from "lucide-react";
 import TenantsTable from "@/components/tenants/TenantsTable";
 
 const AdminDataTables = () => {
@@ -29,8 +30,10 @@ const AdminDataTables = () => {
   // Mock data for all tables
   const mockData = {
     leaseAgreements: [
-      { id: "L001", tenantId: "T001", floor: "5", leaseStart: "2023-01-15", leaseEnd: "2026-01-14", deposit: "$15,600", rentAmount: "$5,200", termsSummary: "3-year commercial lease with annual 3% increase", renewalDate: "2025-10-15" },
-      { id: "L002", tenantId: "T002", floor: "1", leaseStart: "2023-03-01", leaseEnd: "2025-02-28", deposit: "$11,400", rentAmount: "$3,800", termsSummary: "2-year retail lease with option to extend", renewalDate: "2024-12-01" },
+      { id: "L001", tenantId: "T001", name: "TechCorp Solutions", floor: "5", leaseStart: "2023-01-15", leaseEnd: "2026-01-14", monthlyRent: "$5,200", termsSummary: "3-year commercial lease with annual 3% increase", contractCopy: "contract-001.pdf" },
+      { id: "L002", tenantId: "T002", name: "Fashion Boutique LLC", floor: "1", leaseStart: "2023-03-01", leaseEnd: "2025-02-28", monthlyRent: "$3,800", termsSummary: "2-year retail lease with option to extend", contractCopy: "contract-002.pdf" },
+      { id: "L003", tenantId: "T003", name: "Legal Associates Inc", floor: "8", leaseStart: "2022-06-01", leaseEnd: "2025-05-31", monthlyRent: "$6,500", termsSummary: "3-year professional services lease", contractCopy: null },
+      { id: "L004", tenantId: "T004", name: "Creative Studio", floor: "3", leaseStart: "2023-09-15", leaseEnd: "2025-09-14", monthlyRent: "$4,200", termsSummary: "2-year creative space lease", contractCopy: "contract-004.pdf" },
     ],
     rentPayments: [
       { id: "P001", tenantId: "T001", paymentDate: "2024-08-01", monthPaidFor: "August 2024", amount: "$5,200", method: "Bank Transfer", status: "Paid", remarks: "On time payment" },
@@ -134,29 +137,68 @@ const AdminDataTables = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Lease ID</TableHead>
                 <TableHead>Tenant ID</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Floor</TableHead>
                 <TableHead>Lease Start</TableHead>
                 <TableHead>Lease End</TableHead>
-                <TableHead>Deposit</TableHead>
-                <TableHead>Rent Amount</TableHead>
+                <TableHead>Monthly Rent</TableHead>
                 <TableHead>Terms Summary</TableHead>
-                <TableHead>Renewal Date</TableHead>
+                <TableHead>Contract Copy</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.map((lease: any) => (
                 <TableRow key={lease.id}>
-                  <TableCell className="font-medium">{lease.id}</TableCell>
-                  <TableCell>{lease.tenantId}</TableCell>
+                  <TableCell className="font-medium">{lease.tenantId}</TableCell>
+                  <TableCell>{lease.name}</TableCell>
                   <TableCell>{lease.floor}</TableCell>
                   <TableCell>{lease.leaseStart}</TableCell>
                   <TableCell>{lease.leaseEnd}</TableCell>
-                  <TableCell className="font-medium">{lease.deposit}</TableCell>
-                  <TableCell className="font-medium">{lease.rentAmount}</TableCell>
+                  <TableCell className="font-medium">{lease.monthlyRent}</TableCell>
                   <TableCell className="max-w-xs truncate" title={lease.termsSummary}>{lease.termsSummary}</TableCell>
-                  <TableCell>{lease.renewalDate}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {lease.contractCopy ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => console.log('View contract:', lease.contractCopy)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => console.log('Upload contract for:', lease.id)}
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          Upload
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => console.log('Edit lease:', lease.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => console.log('Delete lease:', lease.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
