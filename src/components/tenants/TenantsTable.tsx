@@ -154,8 +154,6 @@ const TenantsTable = () => {
                   <TableHead>Monthly Rent</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>First Payment</TableHead>
-                  <TableHead>Rent Due Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -186,20 +184,6 @@ const TenantsTable = () => {
                       </TableCell>
                       <TableCell>{tenant.phone_number || 'N/A'}</TableCell>
                       <TableCell>{tenant.email || 'N/A'}</TableCell>
-                      <TableCell>
-                        {tenant.first_payment_date 
-                          ? format(new Date(tenant.first_payment_date), 'MMM dd, yyyy')
-                          : 'N/A'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        {rentDueDate ? (
-                          <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
-                            {format(rentDueDate, 'MMM dd, yyyy')}
-                            {isOverdue && ' (OVERDUE)'}
-                          </span>
-                        ) : 'N/A'}
-                      </TableCell>
                       <TableCell>
                         <Badge 
                           variant={
