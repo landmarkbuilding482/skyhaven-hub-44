@@ -114,12 +114,18 @@ const AdminDataTables = () => {
   const renderTable = () => {
     if (!selectedTable) return null;
 
-    // Handle live tenants management separately
+    // Handle live components separately
     if (selectedTable === 'tenantsManagement') {
       return <TenantsTable />;
     }
+    
+    if (selectedTable === 'leaseAgreements') {
+      return <LeaseAgreementsTable />;
+    }
 
     const data = mockData[selectedTable as keyof typeof mockData];
+    if (!data) return null;
+    
     const filteredData = data.filter((item: any) => 
       Object.values(item).some(value => 
         value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -127,8 +133,6 @@ const AdminDataTables = () => {
     );
 
     switch (selectedTable) {
-      case 'leaseAgreements':
-        return <LeaseAgreementsTable />;
 
       case 'rentPayments':
         return (
