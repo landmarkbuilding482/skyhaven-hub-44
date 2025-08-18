@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      lease_agreements: {
+        Row: {
+          contract_file_path: string | null
+          created_at: string
+          id: string
+          lease_end: string
+          lease_start: string
+          monthly_rent: number
+          tenant_id: string
+          terms_summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          contract_file_path?: string | null
+          created_at?: string
+          id?: string
+          lease_end: string
+          lease_start: string
+          monthly_rent: number
+          tenant_id: string
+          terms_summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contract_file_path?: string | null
+          created_at?: string
+          id?: string
+          lease_end?: string
+          lease_start?: string
+          monthly_rent?: number
+          tenant_id?: string
+          terms_summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           business_type: string
