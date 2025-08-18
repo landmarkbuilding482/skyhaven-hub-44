@@ -111,13 +111,35 @@ export const LeaseAgreementsTable = () => {
 
       console.log('Viewing contract with path:', lease.contract_file_path);
 
-      // Try to download the file first to check if it exists
-      const { data: fileData, error: downloadError } = await supabase.storage
+      // Try to download the file with the stored path first
+      let { data: fileData, error: downloadError } = await supabase.storage
         .from('contracts')
         .download(lease.contract_file_path);
 
-      if (downloadError) {
-        console.error('File not found:', downloadError);
+      // If that fails and the path doesn't start with 'contracts/', try with 'contracts/' prefix
+      if (downloadError && !lease.contract_file_path.startsWith('contracts/')) {
+        console.log('Trying with contracts/ prefix...');
+        const pathWithPrefix = `contracts/${lease.contract_file_path}`;
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      // If that fails and the path starts with 'contracts/', try without the prefix
+      if (downloadError && lease.contract_file_path.startsWith('contracts/')) {
+        console.log('Trying without contracts/ prefix...');
+        const pathWithoutPrefix = lease.contract_file_path.replace('contracts/', '');
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithoutPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      if (downloadError || !fileData) {
+        console.error('File not found with any path variant:', downloadError);
         toast.error('Contract file not found. Please re-upload the document.');
         return;
       }
@@ -143,17 +165,38 @@ export const LeaseAgreementsTable = () => {
         return;
       }
 
-      const { data, error } = await supabase.storage
+      // Try to download the file with the stored path first
+      let { data: fileData, error: downloadError } = await supabase.storage
         .from('contracts')
         .download(lease.contract_file_path);
 
-      if (error) {
-        console.error('Download error:', error);
+      // If that fails and the path doesn't start with 'contracts/', try with 'contracts/' prefix
+      if (downloadError && !lease.contract_file_path.startsWith('contracts/')) {
+        const pathWithPrefix = `contracts/${lease.contract_file_path}`;
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      // If that fails and the path starts with 'contracts/', try without the prefix
+      if (downloadError && lease.contract_file_path.startsWith('contracts/')) {
+        const pathWithoutPrefix = lease.contract_file_path.replace('contracts/', '');
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithoutPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      if (downloadError || !fileData) {
+        console.error('Download error:', downloadError);
         toast.error('Failed to download contract file');
         return;
       }
 
-      const url = URL.createObjectURL(data);
+      const url = URL.createObjectURL(fileData);
       const link = document.createElement('a');
       link.href = url;
       link.download = `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`;
