@@ -376,7 +376,7 @@ export const LeaseAgreementsTable = () => {
                 <TableHead>Lease End</TableHead>
                 <TableHead>Monthly Rent</TableHead>
                 <TableHead>Terms Summary</TableHead>
-                <TableHead>Contract Copy</TableHead>
+                <TableHead>Contract</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -395,19 +395,22 @@ export const LeaseAgreementsTable = () => {
                     {lease.terms_summary || 'No summary available'}
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    {lease.contract_file_path ? (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewContract(lease)}
-                        disabled={!lease.contract_file_path}
+                        className="w-full"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className="w-4 h-4 mr-2" />
+                        View PDF
                       </Button>
-                      <label className="cursor-pointer">
-                        <Button variant="outline" size="sm" asChild>
+                    ) : (
+                      <label className="w-full">
+                        <Button variant="outline" size="sm" className="w-full" asChild>
                           <span>
-                            <Upload className="w-4 h-4" />
+                            <Upload className="w-4 h-4 mr-2" />
+                            Upload PDF
                           </span>
                         </Button>
                         <input
@@ -420,7 +423,7 @@ export const LeaseAgreementsTable = () => {
                           }}
                         />
                       </label>
-                    </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -470,6 +473,32 @@ export const LeaseAgreementsTable = () => {
                   <Download className="w-4 h-4 mr-2" />
                   Download
                 </Button>
+                <label className="cursor-pointer">
+                  <Button variant="outline" size="sm" asChild>
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Replace
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      const currentLease = leases.find(lease => 
+                        previewModal.fileName.includes(lease.tenants?.name || '')
+                      );
+                      if (file && currentLease) {
+                        handleUploadContract(currentLease, file);
+                        if (previewModal.fileUrl) {
+                          URL.revokeObjectURL(previewModal.fileUrl);
+                        }
+                        setPreviewModal(prev => ({ ...prev, isOpen: false, fileUrl: null }));
+                      }
+                    }}
+                  />
+                </label>
                 <Button
                   onClick={() => {
                     if (previewModal.fileUrl) {
