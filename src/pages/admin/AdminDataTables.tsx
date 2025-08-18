@@ -5,13 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import TenantsTable from "@/components/tenants/TenantsTable";
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const tables = [
-    { value: "tenants", label: "Tenants Table" },
+    { value: "tenantsManagement", label: "Tenants Management (Live)" },
+    { value: "tenants", label: "Tenants Table (Sample)" },
     { value: "leaseAgreements", label: "Lease Agreements Table" },
     { value: "rentPayments", label: "Rent Payments Table" },
     { value: "occupancy", label: "Occupancy Table" },
@@ -128,6 +130,9 @@ const AdminDataTables = () => {
     );
 
     switch (selectedTable) {
+      case 'tenantsManagement':
+        return <TenantsTable />;
+        
       case 'tenants':
         return (
           <Table>

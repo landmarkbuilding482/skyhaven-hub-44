@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      tenants: {
+        Row: {
+          business_type: string
+          created_at: string
+          email: string | null
+          first_payment_date: string | null
+          floor: string
+          id: string
+          monthly_rent: number
+          name: string
+          phone_number: string | null
+          registration_date: string
+          space_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_type: string
+          created_at?: string
+          email?: string | null
+          first_payment_date?: string | null
+          floor: string
+          id?: string
+          monthly_rent: number
+          name: string
+          phone_number?: string | null
+          registration_date?: string
+          space_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_type?: string
+          created_at?: string
+          email?: string | null
+          first_payment_date?: string | null
+          floor?: string
+          id?: string
+          monthly_rent?: number
+          name?: string
+          phone_number?: string | null
+          registration_date?: string
+          space_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
