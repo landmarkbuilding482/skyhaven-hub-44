@@ -102,10 +102,17 @@ export const LeaseAgreementsTable = () => {
         .from('contracts')
         .download(lease.contract_file_path);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Download error:', error);
+        toast.error('Failed to download contract file');
+        return;
+      }
 
       const url = URL.createObjectURL(data);
       window.open(url, '_blank');
+      
+      // Clean up the URL after a delay to free memory
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error('Error viewing contract:', error);
       toast.error('Failed to view contract');
@@ -120,14 +127,22 @@ export const LeaseAgreementsTable = () => {
         .from('contracts')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast.error('Failed to upload contract file');
+        return;
+      }
 
       const { error: updateError } = await supabase
         .from('lease_agreements')
         .update({ contract_file_path: filePath })
         .eq('id', lease.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        toast.error('Failed to update contract reference');
+        return;
+      }
 
       toast.success('Contract uploaded successfully');
       fetchLeases();
@@ -229,16 +244,10 @@ export const LeaseAgreementsTable = () => {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Lease Agreements</CardTitle>
-        <div className="flex gap-2">
-          <Button onClick={generateSamplePDFs} variant="outline" size="sm">
-            <FileText className="w-4 h-4 mr-2" />
-            Generate Sample PDFs
-          </Button>
-          <Button onClick={() => setShowForm(true)} size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Lease
-          </Button>
-        </div>
+        <Button onClick={() => setShowForm(true)} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Lease
+        </Button>
       </CardHeader>
       <CardContent>
         {leases.length === 0 ? (
