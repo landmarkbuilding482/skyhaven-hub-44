@@ -122,6 +122,11 @@ const AdminDataTables = () => {
   const renderTable = () => {
     if (!selectedTable) return null;
 
+    // Handle live tenants management separately
+    if (selectedTable === 'tenantsManagement') {
+      return <TenantsTable />;
+    }
+
     const data = mockData[selectedTable as keyof typeof mockData];
     const filteredData = data.filter((item: any) => 
       Object.values(item).some(value => 
@@ -130,9 +135,6 @@ const AdminDataTables = () => {
     );
 
     switch (selectedTable) {
-      case 'tenantsManagement':
-        return <TenantsTable />;
-        
       case 'tenants':
         return (
           <Table>
