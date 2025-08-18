@@ -38,7 +38,6 @@ interface PreviewModalState {
   isOpen: boolean;
   fileUrl: string | null;
   fileName: string;
-  currentLease: LeaseAgreement | null;
 }
 
 export const LeaseAgreementsTable = () => {
@@ -50,8 +49,7 @@ export const LeaseAgreementsTable = () => {
   const [previewModal, setPreviewModal] = useState<PreviewModalState>({
     isOpen: false,
     fileUrl: null,
-    fileName: '',
-    currentLease: null
+    fileName: ''
   });
   const [formData, setFormData] = useState<LeaseFormData>({
     tenant_id: "",
@@ -104,52 +102,58 @@ export const LeaseAgreementsTable = () => {
     fetchTenants();
   }, []);
 
-  const openContractWizard = async (lease: LeaseAgreement) => {
-    let fileUrl = null;
-    
-    if (lease.contract_file_path) {
-      try {
-        // Try to download the file with the stored path first
-        let { data: fileData, error: downloadError } = await supabase.storage
-          .from('contracts')
-          .download(lease.contract_file_path);
-
-        // If that fails and the path doesn't start with 'contracts/', try with 'contracts/' prefix
-        if (downloadError && !lease.contract_file_path.startsWith('contracts/')) {
-          console.log('Trying with contracts/ prefix...');
-          const pathWithPrefix = `contracts/${lease.contract_file_path}`;
-          const result = await supabase.storage
-            .from('contracts')
-            .download(pathWithPrefix);
-          fileData = result.data;
-          downloadError = result.error;
-        }
-
-        // If that fails and the path starts with 'contracts/', try without the prefix
-        if (downloadError && lease.contract_file_path.startsWith('contracts/')) {
-          console.log('Trying without contracts/ prefix...');
-          const pathWithoutPrefix = lease.contract_file_path.replace('contracts/', '');
-          const result = await supabase.storage
-            .from('contracts')
-            .download(pathWithoutPrefix);
-          fileData = result.data;
-          downloadError = result.error;
-        }
-
-        if (!downloadError && fileData) {
-          fileUrl = URL.createObjectURL(fileData);
-        }
-      } catch (error) {
-        console.error('Error loading contract:', error);
+  const handleViewContract = async (lease: LeaseAgreement) => {
+    try {
+      if (!lease.contract_file_path) {
+        toast.error('No contract file available');
+        return;
       }
-    }
 
-    setPreviewModal({
-      isOpen: true,
-      fileUrl: fileUrl,
-      fileName: `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`,
-      currentLease: lease
-    });
+      console.log('Viewing contract with path:', lease.contract_file_path);
+
+      // Try to download the file with the stored path first
+      let { data: fileData, error: downloadError } = await supabase.storage
+        .from('contracts')
+        .download(lease.contract_file_path);
+
+      // If that fails and the path doesn't start with 'contracts/', try with 'contracts/' prefix
+      if (downloadError && !lease.contract_file_path.startsWith('contracts/')) {
+        console.log('Trying with contracts/ prefix...');
+        const pathWithPrefix = `contracts/${lease.contract_file_path}`;
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      // If that fails and the path starts with 'contracts/', try without the prefix
+      if (downloadError && lease.contract_file_path.startsWith('contracts/')) {
+        console.log('Trying without contracts/ prefix...');
+        const pathWithoutPrefix = lease.contract_file_path.replace('contracts/', '');
+        const result = await supabase.storage
+          .from('contracts')
+          .download(pathWithoutPrefix);
+        fileData = result.data;
+        downloadError = result.error;
+      }
+
+      if (downloadError || !fileData) {
+        console.error('File not found with any path variant:', downloadError);
+        toast.error('Contract file not found. Please re-upload the document.');
+        return;
+      }
+
+      // Create a blob URL and open in new tab
+      const fileUrl = URL.createObjectURL(fileData);
+      window.open(fileUrl, '_blank');
+      
+      // Clean up the URL after a delay to free memory
+      setTimeout(() => URL.revokeObjectURL(fileUrl), 5000);
+    } catch (error) {
+      console.error('Error viewing contract:', error);
+      toast.error('Failed to view contract');
+    }
   };
 
   const handleDownloadContract = async (lease: LeaseAgreement) => {
@@ -251,9 +255,6 @@ export const LeaseAgreementsTable = () => {
 
       toast.success('Contract uploaded successfully');
       fetchLeases();
-      
-      // Refresh the preview with the new file
-      setTimeout(() => openContractWizard(lease), 500);
     } catch (error) {
       console.error('Error uploading contract:', error);
       toast.error('Failed to upload contract');
@@ -392,15 +393,32 @@ export const LeaseAgreementsTable = () => {
                     {lease.terms_summary || 'No summary available'}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openContractWizard(lease)}
-                      className="w-full"
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      Contract
-                    </Button>
+                    <div className="flex gap-1">
+                      <label className="cursor-pointer">
+                        <Button variant="outline" size="sm" asChild>
+                          <span>
+                            <Upload className="w-4 h-4" />
+                          </span>
+                        </Button>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadContract(lease, file);
+                          }}
+                        />
+                      </label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewContract(lease)}
+                        disabled={!lease.contract_file_path}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -426,122 +444,6 @@ export const LeaseAgreementsTable = () => {
           </Table>
         )}
 
-        {/* Contract Preview Wizard */}
-        <Dialog open={previewModal.isOpen} onOpenChange={(open) => {
-          if (!open && previewModal.fileUrl) {
-            URL.revokeObjectURL(previewModal.fileUrl);
-          }
-          setPreviewModal(prev => ({ ...prev, isOpen: open, fileUrl: null, currentLease: null }));
-        }}>
-          <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
-            {/* Title Area */}
-            <DialogHeader className="pb-4 border-b">
-              <DialogTitle className="text-xl">
-                Contract Management - {previewModal.fileName}
-              </DialogTitle>
-            </DialogHeader>
-            
-            {/* Main Content Area */}
-            <div className="flex-1 flex gap-4 min-h-0">
-              {/* Document Preview Area */}
-              <div className="flex-1 flex flex-col">
-                <h3 className="text-sm font-medium mb-2 text-muted-foreground">Document Preview</h3>
-                <div className="flex-1 border rounded-lg bg-muted/50 flex items-center justify-center">
-                  {previewModal.fileUrl ? (
-                    <iframe
-                      src={previewModal.fileUrl}
-                      className="w-full h-full rounded-lg"
-                      title="Contract Preview"
-                      onError={() => {
-                        console.error('Failed to load PDF in iframe');
-                        toast.error('Failed to load PDF preview');
-                      }}
-                    />
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">No Document Uploaded</p>
-                      <p className="text-sm">Upload a PDF contract to preview it here</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Controls Area */}
-              <div className="w-80 flex flex-col">
-                <h3 className="text-sm font-medium mb-4 text-muted-foreground">Document Actions</h3>
-                <div className="space-y-3">
-                  
-                  {/* Upload Button */}
-                  <label className="block">
-                    <Button variant="default" size="sm" className="w-full" asChild>
-                      <span>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {previewModal.currentLease?.contract_file_path ? 'Replace Contract' : 'Upload Contract'}
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file && previewModal.currentLease) {
-                          handleUploadContract(previewModal.currentLease, file);
-                        }
-                      }}
-                    />
-                  </label>
-
-                  {/* Download Button */}
-                  <Button
-                    onClick={() => {
-                      if (previewModal.currentLease) {
-                        handleDownloadContract(previewModal.currentLease);
-                      }
-                    }}
-                    disabled={!previewModal.currentLease?.contract_file_path}
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download Contract
-                  </Button>
-
-                  {/* Contract Info */}
-                  {previewModal.currentLease && (
-                    <div className="mt-6 p-4 bg-muted rounded-lg">
-                      <h4 className="font-medium mb-2">Lease Details</h4>
-                      <div className="text-sm space-y-1 text-muted-foreground">
-                        <p><span className="font-medium">Tenant:</span> {previewModal.currentLease.tenants?.name}</p>
-                        <p><span className="font-medium">Floor:</span> {previewModal.currentLease.tenants?.floor}</p>
-                        <p><span className="font-medium">Monthly Rent:</span> ${previewModal.currentLease.monthly_rent.toLocaleString()}</p>
-                        <p><span className="font-medium">Lease Period:</span> {format(new Date(previewModal.currentLease.lease_start), 'MMM dd, yyyy')} - {format(new Date(previewModal.currentLease.lease_end), 'MMM dd, yyyy')}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Close Button */}
-                  <Button
-                    onClick={() => {
-                      if (previewModal.fileUrl) {
-                        URL.revokeObjectURL(previewModal.fileUrl);
-                      }
-                      setPreviewModal(prev => ({ ...prev, isOpen: false, fileUrl: null, currentLease: null }));
-                    }}
-                    variant="secondary"
-                    size="sm"
-                    className="w-full mt-4"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent>
