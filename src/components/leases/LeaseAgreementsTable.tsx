@@ -109,19 +109,25 @@ export const LeaseAgreementsTable = () => {
         return;
       }
 
-      // Get the public URL for the file
-      const { data } = supabase.storage
-        .from('contracts')
-        .getPublicUrl(lease.contract_file_path);
+      console.log('Viewing contract with path:', lease.contract_file_path);
 
-      if (!data.publicUrl) {
-        toast.error('Failed to get file URL');
+      // Try to download the file first to check if it exists
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('contracts')
+        .download(lease.contract_file_path);
+
+      if (downloadError) {
+        console.error('File not found:', downloadError);
+        toast.error('Contract file not found. Please re-upload the document.');
         return;
       }
 
+      // Create a blob URL for preview
+      const fileUrl = URL.createObjectURL(fileData);
+
       setPreviewModal({
         isOpen: true,
-        fileUrl: data.publicUrl,
+        fileUrl: fileUrl,
         fileName: `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`
       });
     } catch (error) {
@@ -178,7 +184,7 @@ export const LeaseAgreementsTable = () => {
       }
 
       const timestamp = new Date().getTime();
-      const filePath = `contracts/${lease.tenant_id}_lease_agreement_${timestamp}.pdf`;
+      const filePath = `${lease.tenant_id}_lease_agreement_${timestamp}.pdf`;
       
       toast.info('Uploading contract...');
 
@@ -398,17 +404,21 @@ export const LeaseAgreementsTable = () => {
         )}
 
         {/* Document Preview Modal */}
-        <Dialog open={previewModal.isOpen} onOpenChange={(open) => setPreviewModal(prev => ({ ...prev, isOpen: open }))}>
+        <Dialog open={previewModal.isOpen} onOpenChange={(open) => {
+          if (!open && previewModal.fileUrl) {
+            URL.revokeObjectURL(previewModal.fileUrl);
+          }
+          setPreviewModal(prev => ({ ...prev, isOpen: open }));
+        }}>
           <DialogContent className="max-w-4xl h-[80vh]">
             <DialogHeader className="flex flex-row items-center justify-between">
               <DialogTitle>{previewModal.fileName}</DialogTitle>
               <div className="flex gap-2">
                 <Button
                   onClick={() => {
-                    const currentLease = leases.find(lease => {
-                      const { data } = supabase.storage.from('contracts').getPublicUrl(lease.contract_file_path || '');
-                      return data.publicUrl === previewModal.fileUrl;
-                    });
+                    const currentLease = leases.find(lease => 
+                      previewModal.fileName.includes(lease.tenants?.name || '')
+                    );
                     if (currentLease) handleDownloadContract(currentLease);
                   }}
                   size="sm"
@@ -418,7 +428,12 @@ export const LeaseAgreementsTable = () => {
                   Download
                 </Button>
                 <Button
-                  onClick={() => setPreviewModal(prev => ({ ...prev, isOpen: false }))}
+                  onClick={() => {
+                    if (previewModal.fileUrl) {
+                      URL.revokeObjectURL(previewModal.fileUrl);
+                    }
+                    setPreviewModal(prev => ({ ...prev, isOpen: false, fileUrl: null }));
+                  }}
                   size="sm"
                   variant="outline"
                 >
@@ -432,6 +447,10 @@ export const LeaseAgreementsTable = () => {
                   src={previewModal.fileUrl}
                   className="w-full h-full"
                   title="Contract Preview"
+                  onError={() => {
+                    console.error('Failed to load PDF in iframe');
+                    toast.error('Failed to load PDF preview');
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
