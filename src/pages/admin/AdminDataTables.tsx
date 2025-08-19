@@ -56,7 +56,7 @@ type Utility = {
   amount: number;
 };
 
-type VisitorFootTraffic = {
+type VisitorTraffic = {
   id: string;
   date: string;
   time: string;
@@ -82,7 +82,7 @@ const AdminDataTables = () => {
   const [utilitiesData, setUtilitiesData] = useState<Utility[]>([]);
   
   // State for visitor traffic data
-  const [visitorTrafficData, setVisitorTrafficData] = useState<VisitorFootTraffic[]>([]);
+  const [visitorTrafficData, setVisitorTrafficData] = useState<VisitorTraffic[]>([]);
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
@@ -96,7 +96,7 @@ const AdminDataTables = () => {
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
-  const [editingVisitorTraffic, setEditingVisitorTraffic] = useState<VisitorFootTraffic | null>(null);
+  const [editingVisitorTraffic, setEditingVisitorTraffic] = useState<VisitorTraffic | null>(null);
   
   // Form states
   const [floorForm, setFloorForm] = useState({
@@ -623,7 +623,7 @@ const AdminDataTables = () => {
     fetchVisitorTrafficData();
   };
 
-  const handleVisitorTrafficEdit = (traffic: VisitorFootTraffic) => {
+  const handleVisitorTrafficEdit = (traffic: VisitorTraffic) => {
     setEditingVisitorTraffic(traffic);
     setVisitorTrafficForm({
       date: traffic.date,
@@ -1738,14 +1738,6 @@ const AdminDataTables = () => {
     }
 
     if (selectedTable === 'visitor_traffic') {
-      console.log('Rendering visitor traffic table, data:', visitorTrafficData);
-      const filteredVisitorTraffic = visitorTrafficData.filter((traffic) =>
-        traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        traffic.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        traffic.date.includes(searchTerm.toLowerCase())
-      );
-
       return (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -1754,82 +1746,6 @@ const AdminDataTables = () => {
               <Plus className="h-4 w-4 mr-2" />
               Add Entry
             </Button>
-            
-            <Dialog open={isVisitorTrafficDialogOpen} onOpenChange={setIsVisitorTrafficDialogOpen}>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>{editingVisitorTraffic ? 'Edit' : 'Add'} Visitor Traffic Entry</DialogTitle>
-                  <DialogDescription>
-                    {editingVisitorTraffic ? 'Update the visitor traffic record' : 'Create a new visitor traffic record'}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="date" className="text-right">Date</Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={visitorTrafficForm.date}
-                      onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, date: e.target.value })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="time" className="text-right">Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={visitorTrafficForm.time}
-                      onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, time: e.target.value })}
-                      className="col-span-3"
-                      placeholder="HH:MM"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="floor" className="text-right">Floor</Label>
-                    <Input
-                      id="floor"
-                      value={visitorTrafficForm.floor}
-                      onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, floor: e.target.value })}
-                      className="col-span-3"
-                      placeholder="e.g., 1st Floor"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="company" className="text-right">Company</Label>
-                    <Input
-                      id="company"
-                      value={visitorTrafficForm.company}
-                      onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, company: e.target.value })}
-                      className="col-span-3"
-                      placeholder="Company they came to"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="purpose" className="text-right">Purpose</Label>
-                    <Select value={visitorTrafficForm.purpose} onValueChange={(value) => setVisitorTrafficForm({ ...visitorTrafficForm, purpose: value })}>
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select purpose" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Work">Work</SelectItem>
-                        <SelectItem value="Client">Client</SelectItem>
-                        <SelectItem value="Visitor">Visitor</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsVisitorTrafficDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleVisitorTrafficSubmit}>
-                    {editingVisitorTraffic ? 'Update' : 'Create'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
           </div>
           
           <Table>
@@ -1845,28 +1761,109 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredVisitorTraffic.map((traffic) => (
-                <TableRow key={traffic.id}>
-                  <TableCell className="font-medium">{traffic.id}</TableCell>
-                  <TableCell>{new Date(traffic.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{traffic.time}</TableCell>
-                  <TableCell>{traffic.floor}</TableCell>
-                  <TableCell>{traffic.company}</TableCell>
-                  <TableCell>{traffic.purpose}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficEdit(traffic)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficDelete(traffic.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {visitorTrafficData
+                .filter((traffic) =>
+                  traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  traffic.purpose.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((traffic) => (
+                  <TableRow key={traffic.id}>
+                    <TableCell className="font-medium">{traffic.id}</TableCell>
+                    <TableCell>{new Date(traffic.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{traffic.time}</TableCell>
+                    <TableCell>{traffic.floor}</TableCell>
+                    <TableCell>{traffic.company}</TableCell>
+                    <TableCell>{traffic.purpose}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficEdit(traffic)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficDelete(traffic.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
+
+          <Dialog open={isVisitorTrafficDialogOpen} onOpenChange={setIsVisitorTrafficDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{editingVisitorTraffic ? 'Edit' : 'Add'} Visitor Traffic Entry</DialogTitle>
+                <DialogDescription>
+                  {editingVisitorTraffic ? 'Update the visitor traffic record' : 'Create a new visitor traffic record'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={visitorTrafficForm.date}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, date: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="time" className="text-right">Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={visitorTrafficForm.time}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, time: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="floor" className="text-right">Floor</Label>
+                  <Input
+                    id="floor"
+                    value={visitorTrafficForm.floor}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, floor: e.target.value })}
+                    className="col-span-3"
+                    placeholder="e.g., 1st Floor"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="company" className="text-right">Company</Label>
+                  <Input
+                    id="company"
+                    value={visitorTrafficForm.company}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, company: e.target.value })}
+                    className="col-span-3"
+                    placeholder="Company they came to"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="purpose" className="text-right">Purpose</Label>
+                  <Select value={visitorTrafficForm.purpose} onValueChange={(value) => setVisitorTrafficForm({ ...visitorTrafficForm, purpose: value })}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select purpose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Work">Work</SelectItem>
+                      <SelectItem value="Client">Client</SelectItem>
+                      <SelectItem value="Visitor">Visitor</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsVisitorTrafficDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleVisitorTrafficSubmit}>
+                  {editingVisitorTraffic ? 'Update' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       );
     }
