@@ -56,6 +56,15 @@ type Utility = {
   amount: number;
 };
 
+type FootTraffic = {
+  id: string;
+  date: string;
+  time: string;
+  floor: string;
+  company: string;
+  purpose: string;
+};
+
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -73,12 +82,16 @@ const AdminDataTables = () => {
   // State for utilities data
   const [utilitiesData, setUtilitiesData] = useState<Utility[]>([]);
   
+  // State for foot traffic data
+  const [footTrafficData, setFootTrafficData] = useState<FootTraffic[]>([]);
+  
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
+  const [isFootTrafficDialogOpen, setIsFootTrafficDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
@@ -86,6 +99,7 @@ const AdminDataTables = () => {
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
+  const [editingFootTraffic, setEditingFootTraffic] = useState<FootTraffic | null>(null);
   
   
   // Form states
@@ -145,6 +159,7 @@ const AdminDataTables = () => {
     { value: "occupancy", label: "Occupancy Table" },
     { value: "maintenance", label: "Maintenance & Repairs Table" },
     { value: "utilities", label: "Utilities Table" },
+    { value: "foot_traffic", label: "Foot Traffic Table" },
     { value: "eventBookings", label: "Event Bookings Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
     { value: "cleaningSecurity", label: "Cleaning & Security Logs" },
@@ -239,6 +254,20 @@ const AdminDataTables = () => {
     setUtilitiesData(data || []);
   };
 
+  // Fetch foot traffic data
+  const fetchFootTrafficData = async () => {
+    const { data, error } = await supabase
+      .from('foot_traffic')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch foot traffic data');
+      return;
+    }
+    
+    setFootTrafficData(data || []);
+  };
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -250,6 +279,8 @@ const AdminDataTables = () => {
       fetchTenantsList();
     } else if (selectedTable === 'utilities') {
       fetchUtilitiesData();
+    } else if (selectedTable === 'foot_traffic') {
+      fetchFootTrafficData();
     }
   }, [selectedTable]);
 
@@ -555,6 +586,94 @@ const AdminDataTables = () => {
   const handleUtilitiesDropdownConfigCancel = () => {
     setTempUtilitiesDropdownOptions(utilitiesDropdownOptions);
     setIsUtilitiesDropdownConfigOpen(false);
+  };
+
+  // CRUD functions for foot traffic
+  const [footTrafficForm, setFootTrafficForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: "",
+    floor: "",
+    company: "",
+    purpose: "Work"
+  });
+
+  const handleFootTrafficSubmit = async () => {
+    if (editingFootTraffic) {
+      // Update existing record
+      const { error } = await supabase
+        .from('foot_traffic')
+        .update({
+          date: footTrafficForm.date,
+          time: footTrafficForm.time,
+          floor: footTrafficForm.floor,
+          company: footTrafficForm.company,
+          purpose: footTrafficForm.purpose
+        })
+        .eq('id', editingFootTraffic.id);
+      
+      if (error) {
+        toast.error('Failed to update foot traffic record');
+        return;
+      }
+      
+      toast.success('Foot traffic record updated successfully');
+    } else {
+      // Create new record
+      const { error } = await supabase
+        .from('foot_traffic')
+        .insert([{
+          date: footTrafficForm.date,
+          time: footTrafficForm.time,
+          floor: footTrafficForm.floor,
+          company: footTrafficForm.company,
+          purpose: footTrafficForm.purpose
+        }]);
+      
+      if (error) {
+        toast.error('Failed to create foot traffic record');
+        return;
+      }
+      
+      toast.success('Foot traffic record created successfully');
+    }
+    
+    setIsFootTrafficDialogOpen(false);
+    setEditingFootTraffic(null);
+    setFootTrafficForm({
+      date: new Date().toISOString().split('T')[0],
+      time: "",
+      floor: "",
+      company: "",
+      purpose: "Work"
+    });
+    fetchFootTrafficData();
+  };
+
+  const handleFootTrafficEdit = (traffic: FootTraffic) => {
+    setEditingFootTraffic(traffic);
+    setFootTrafficForm({
+      date: traffic.date,
+      time: traffic.time,
+      floor: traffic.floor,
+      company: traffic.company,
+      purpose: traffic.purpose
+    });
+    setIsFootTrafficDialogOpen(true);
+  };
+
+  const handleFootTrafficDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('foot_traffic')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete foot traffic record');
+      return;
+    }
+    
+    toast.success('Foot traffic record deleted successfully');
+    fetchFootTrafficData();
   };
 
   const addDropdownOption = (category: string, newOption: string) => {
@@ -1620,6 +1739,142 @@ const AdminDataTables = () => {
       );
     }
 
+    // Handle foot traffic table with real backend
+    if (selectedTable === 'foot_traffic') {
+      const filteredFootTraffic = footTrafficData.filter((traffic) =>
+        traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.date.includes(searchTerm.toLowerCase())
+      );
+
+      return (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Foot Traffic</h2>
+            <Dialog open={isFootTrafficDialogOpen} onOpenChange={setIsFootTrafficDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entry
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>{editingFootTraffic ? 'Edit' : 'Add'} Foot Traffic Entry</DialogTitle>
+                  <DialogDescription>
+                    {editingFootTraffic ? 'Update the foot traffic record' : 'Create a new foot traffic record'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="date" className="text-right">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={footTrafficForm.date}
+                      onChange={(e) => setFootTrafficForm({ ...footTrafficForm, date: e.target.value })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="time" className="text-right">Time</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={footTrafficForm.time}
+                      onChange={(e) => setFootTrafficForm({ ...footTrafficForm, time: e.target.value })}
+                      className="col-span-3"
+                      placeholder="HH:MM"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="floor" className="text-right">Floor</Label>
+                    <Input
+                      id="floor"
+                      value={footTrafficForm.floor}
+                      onChange={(e) => setFootTrafficForm({ ...footTrafficForm, floor: e.target.value })}
+                      className="col-span-3"
+                      placeholder="e.g., 1st Floor"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="company" className="text-right">Company</Label>
+                    <Input
+                      id="company"
+                      value={footTrafficForm.company}
+                      onChange={(e) => setFootTrafficForm({ ...footTrafficForm, company: e.target.value })}
+                      className="col-span-3"
+                      placeholder="Company they came to"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="purpose" className="text-right">Purpose</Label>
+                    <Select value={footTrafficForm.purpose} onValueChange={(value) => setFootTrafficForm({ ...footTrafficForm, purpose: value })}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select purpose" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Work">Work</SelectItem>
+                        <SelectItem value="Client">Client</SelectItem>
+                        <SelectItem value="Visitor">Visitor</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsFootTrafficDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleFootTrafficSubmit}>
+                    {editingFootTraffic ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Floor</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Purpose</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredFootTraffic.map((traffic) => (
+                <TableRow key={traffic.id}>
+                  <TableCell className="font-medium">{traffic.id.slice(0, 8)}...</TableCell>
+                  <TableCell>{new Date(traffic.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{traffic.time}</TableCell>
+                  <TableCell>{traffic.floor}</TableCell>
+                  <TableCell>{traffic.company}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{traffic.purpose}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleFootTrafficEdit(traffic)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleFootTrafficDelete(traffic.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
 
     if (selectedTable === 'eventBookings') {
       return (
