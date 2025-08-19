@@ -145,9 +145,7 @@ const AdminDataTables = () => {
     { value: "occupancy", label: "Occupancy Table" },
     { value: "maintenance", label: "Maintenance & Repairs Table" },
     { value: "utilities", label: "Utilities Table" },
-    { value: "eventBookings", label: "Event Bookings Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
-    { value: "cleaningSecurity", label: "Cleaning & Security Logs" },
     { value: "revenue", label: "Revenue & Expenses Table" },
     { value: "assets", label: "Asset Inventory Table" }
   ];
@@ -671,38 +669,6 @@ const AdminDataTables = () => {
         purpose: "Training Sessions"
       }
     ],
-    eventBookings: [
-      {
-        id: "E001",
-        eventName: "Tech Conference 2024",
-        organizer: "TechCorp Inc.",
-        date: "2024-08-15",
-        time: "9:00 AM - 5:00 PM",
-        venue: "Main Conference Hall",
-        attendees: 150,
-        status: "Confirmed"
-      },
-      {
-        id: "E002",
-        eventName: "Product Launch",
-        organizer: "Innovation Labs",
-        date: "2024-08-20",
-        time: "6:00 PM - 9:00 PM",
-        venue: "Exhibition Space",
-        attendees: 80,
-        status: "Pending"
-      },
-      {
-        id: "E003",
-        eventName: "Networking Mixer",
-        organizer: "Business Network",
-        date: "2024-08-25",
-        time: "7:00 PM - 10:00 PM",
-        venue: "Rooftop Terrace",
-        attendees: 60,
-        status: "Confirmed"
-      }
-    ],
     feedback: [
       {
         id: "F001",
@@ -736,41 +702,6 @@ const AdminDataTables = () => {
         priority: "Low",
         status: "Closed",
         assignedTo: "Cleaning Team"
-      }
-    ],
-    cleaningSecurity: [
-      {
-        id: "CS001",
-        date: "2024-08-05",
-        shift: "Morning",
-        cleaningStatus: "Completed",
-        securityIncidents: 0,
-        areasInspected: "All floors, restrooms, common areas",
-        issuesFound: "None",
-        actionsTaken: "Regular cleaning completed",
-        staff: "John D., Sarah M."
-      },
-      {
-        id: "CS002",
-        date: "2024-08-04",
-        shift: "Evening",
-        cleaningStatus: "Completed",
-        securityIncidents: 1,
-        areasInspected: "Parking garage, entrance, lobby",
-        issuesFound: "Suspicious individual in parking",
-        actionsTaken: "Individual escorted out, incident logged",
-        staff: "Mike R., Lisa K."
-      },
-      {
-        id: "CS003",
-        date: "2024-08-03",
-        shift: "Night",
-        cleaningStatus: "Completed",
-        securityIncidents: 0,
-        areasInspected: "All floors, emergency exits",
-        issuesFound: "Broken light in stairwell",
-        actionsTaken: "Maintenance request submitted",
-        staff: "Tom B., Anna L."
       }
     ],
     revenue: [
@@ -1621,53 +1552,6 @@ const AdminDataTables = () => {
     }
 
 
-    if (selectedTable === 'eventBookings') {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Event Name</TableHead>
-              <TableHead>Organizer</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Venue</TableHead>
-              <TableHead>Attendees</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.eventName}</TableCell>
-                <TableCell>{item.organizer}</TableCell>
-                <TableCell>{item.date}</TableCell>
-                <TableCell>{item.time}</TableCell>
-                <TableCell>{item.venue}</TableCell>
-                <TableCell>{item.attendees}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      );
-    }
 
     if (selectedTable === 'feedback') {
       return (
@@ -1723,55 +1607,6 @@ const AdminDataTables = () => {
       );
     }
 
-    if (selectedTable === 'cleaningSecurity') {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Shift</TableHead>
-              <TableHead>Cleaning Status</TableHead>
-              <TableHead>Security Incidents</TableHead>
-              <TableHead>Areas Inspected</TableHead>
-              <TableHead>Issues Found</TableHead>
-              <TableHead>Actions Taken</TableHead>
-              <TableHead>Staff</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.date}</TableCell>
-                <TableCell>{item.shift}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.cleaningStatus)}>
-                    {item.cleaningStatus}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.securityIncidents}</TableCell>
-                <TableCell>{item.areasInspected}</TableCell>
-                <TableCell>{item.issuesFound}</TableCell>
-                <TableCell>{item.actionsTaken}</TableCell>
-                <TableCell>{item.staff}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      );
-    }
 
     if (selectedTable === 'revenue') {
       return (
