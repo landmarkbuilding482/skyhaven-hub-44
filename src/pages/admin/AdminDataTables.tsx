@@ -69,6 +69,16 @@ type FeedbackComplaint = {
   assigned_to: string | null;
 };
 
+type RevenueExpense = {
+  id: string;
+  revenue_expense_id: string;
+  date: string;
+  type: string;
+  category: string;
+  description: string;
+  amount: number;
+};
+
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -90,6 +100,9 @@ const AdminDataTables = () => {
   const [feedbackData, setFeedbackData] = useState<FeedbackComplaint[]>([]);
   const [tenants, setTenants] = useState<Array<{id: string, name: string}>>([]);
   
+  // State for revenue & expenses data
+  const [revenueExpenseData, setRevenueExpenseData] = useState<RevenueExpense[]>([]);
+  
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
@@ -98,16 +111,21 @@ const AdminDataTables = () => {
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isFeedbackViewDialogOpen, setIsFeedbackViewDialogOpen] = useState(false);
+  const [isRevenueExpenseDialogOpen, setIsRevenueExpenseDialogOpen] = useState(false);
+  const [isRevenueExpenseViewDialogOpen, setIsRevenueExpenseViewDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
   const [isFeedbackDropdownConfigOpen, setIsFeedbackDropdownConfigOpen] = useState(false);
+  const [isRevenueExpenseDropdownConfigOpen, setIsRevenueExpenseDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
   const [editingFeedback, setEditingFeedback] = useState<FeedbackComplaint | null>(null);
   const [viewingFeedback, setViewingFeedback] = useState<FeedbackComplaint | null>(null);
+  const [editingRevenueExpense, setEditingRevenueExpense] = useState<RevenueExpense | null>(null);
+  const [viewingRevenueExpense, setViewingRevenueExpense] = useState<RevenueExpense | null>(null);
   
   
   // Form states
@@ -151,6 +169,14 @@ const AdminDataTables = () => {
     assigned_to: "unassigned"
   });
 
+  const [revenueExpenseForm, setRevenueExpenseForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    type: "",
+    category: "",
+    description: "",
+    amount: 0
+  });
+
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -174,10 +200,18 @@ const AdminDataTables = () => {
     assigned_to: ["Building Manager", "Maintenance Team", "Security", "Admin", "Customer Service"]
   });
 
+  // Revenue & Expenses dropdown options state
+  const [revenueExpenseDropdownOptions, setRevenueExpenseDropdownOptions] = useState({
+    type: ["Revenue", "Expense"],
+    revenueCategories: ["Rent Income", "Parking Fees", "Utility Reimbursements", "Late Fees", "Other Income"],
+    expenseCategories: ["Maintenance", "Utilities", "Insurance", "Property Tax", "Management Fees", "Marketing", "Legal Fees", "Office Supplies", "Other Expenses"]
+  });
+
   // Temp dropdown options for editing
   const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
   const [tempUtilitiesDropdownOptions, setTempUtilitiesDropdownOptions] = useState(utilitiesDropdownOptions);
   const [tempFeedbackDropdownOptions, setTempFeedbackDropdownOptions] = useState(feedbackDropdownOptions);
+  const [tempRevenueExpenseDropdownOptions, setTempRevenueExpenseDropdownOptions] = useState(revenueExpenseDropdownOptions);
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -316,6 +350,21 @@ const AdminDataTables = () => {
     setTenants(data || []);
   };
 
+  // Fetch revenue & expenses data
+  const fetchRevenueExpenseData = async () => {
+    const { data, error } = await supabase
+      .from('revenue_expenses')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch revenue & expenses data');
+      return;
+    }
+    
+    setRevenueExpenseData(data || []);
+  };
+
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -330,6 +379,8 @@ const AdminDataTables = () => {
     } else if (selectedTable === 'feedback') {
       fetchFeedbackData();
       fetchTenants();
+    } else if (selectedTable === 'revenue') {
+      fetchRevenueExpenseData();
     }
   }, [selectedTable]);
 
@@ -705,6 +756,79 @@ const AdminDataTables = () => {
     setIsFeedbackViewDialogOpen(true);
   };
 
+  // CRUD functions for revenue & expenses
+  const handleRevenueExpenseSubmit = async () => {
+    if (editingRevenueExpense) {
+      // Update existing revenue/expense
+      const { error } = await supabase
+        .from('revenue_expenses')
+        .update(revenueExpenseForm)
+        .eq('id', editingRevenueExpense.id);
+      
+      if (error) {
+        toast.error('Failed to update revenue/expense record');
+        return;
+      }
+      
+      toast.success('Revenue/expense record updated successfully');
+    } else {
+      // Create new revenue/expense
+      const { error } = await supabase
+        .from('revenue_expenses')
+        .insert([revenueExpenseForm]);
+      
+      if (error) {
+        toast.error('Failed to create revenue/expense record');
+        return;
+      }
+      
+      toast.success('Revenue/expense record created successfully');
+    }
+    
+    setIsRevenueExpenseDialogOpen(false);
+    setEditingRevenueExpense(null);
+    setRevenueExpenseForm({
+      date: new Date().toISOString().split('T')[0],
+      type: "",
+      category: "",
+      description: "",
+      amount: 0
+    });
+    fetchRevenueExpenseData();
+  };
+
+  const handleRevenueExpenseEdit = (revenueExpense: RevenueExpense) => {
+    setEditingRevenueExpense(revenueExpense);
+    setRevenueExpenseForm({
+      date: revenueExpense.date,
+      type: revenueExpense.type,
+      category: revenueExpense.category,
+      description: revenueExpense.description,
+      amount: revenueExpense.amount
+    });
+    setIsRevenueExpenseDialogOpen(true);
+  };
+
+  const handleRevenueExpenseDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('revenue_expenses')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete revenue/expense record');
+      return;
+    }
+    
+    toast.success('Revenue/expense record deleted successfully');
+    fetchRevenueExpenseData();
+  };
+
+  const handleRevenueExpenseView = (revenueExpense: RevenueExpense) => {
+    setViewingRevenueExpense(revenueExpense);
+    setIsRevenueExpenseViewDialogOpen(true);
+  };
+
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -740,6 +864,18 @@ const AdminDataTables = () => {
   const handleFeedbackDropdownConfigCancel = () => {
     setTempFeedbackDropdownOptions(feedbackDropdownOptions);
     setIsFeedbackDropdownConfigOpen(false);
+  };
+
+  // Revenue & Expenses dropdown configuration functions
+  const handleRevenueExpenseDropdownConfigSave = () => {
+    setRevenueExpenseDropdownOptions(tempRevenueExpenseDropdownOptions);
+    setIsRevenueExpenseDropdownConfigOpen(false);
+    toast.success('Revenue & Expenses dropdown options updated successfully');
+  };
+
+  const handleRevenueExpenseDropdownConfigCancel = () => {
+    setTempRevenueExpenseDropdownOptions(revenueExpenseDropdownOptions);
+    setIsRevenueExpenseDropdownConfigOpen(false);
   };
 
   const addDropdownOption = (category: string, newOption: string) => {
@@ -2069,48 +2205,287 @@ const AdminDataTables = () => {
 
 
     if (selectedTable === 'revenue') {
+      const filteredRevenueExpense = revenueExpenseData.filter(item =>
+        item.revenue_expense_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const getCategories = () => {
+        if (revenueExpenseForm.type === 'Revenue') {
+          return revenueExpenseDropdownOptions.revenueCategories;
+        } else if (revenueExpenseForm.type === 'Expense') {
+          return revenueExpenseDropdownOptions.expenseCategories;
+        }
+        return [];
+      };
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Month</TableHead>
-              <TableHead>Rent Revenue</TableHead>
-              <TableHead>Parking Revenue</TableHead>
-              <TableHead>Event Revenue</TableHead>
-              <TableHead>Total Revenue</TableHead>
-              <TableHead>Expenses</TableHead>
-              <TableHead>Net Income</TableHead>
-              <TableHead>Profit Margin</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.month}</TableCell>
-                <TableCell>{item.rentRevenue}</TableCell>
-                <TableCell>{item.parkingRevenue}</TableCell>
-                <TableCell>{item.eventRevenue}</TableCell>
-                <TableCell className="font-medium">{item.totalRevenue}</TableCell>
-                <TableCell>{item.expenses}</TableCell>
-                <TableCell className="font-medium text-green-600">{item.netIncome}</TableCell>
-                <TableCell>{item.profitMargin}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Revenue & Expenses</h3>
+            <div className="flex gap-2">
+              <Dialog open={isRevenueExpenseDropdownConfigOpen} onOpenChange={setIsRevenueExpenseDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Configure Dropdowns
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Configure Revenue & Expenses Dropdowns</DialogTitle>
+                    <DialogDescription>
+                      Manage the options available in dropdown menus for revenue and expense categories.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-6">
+                    {[
+                      { key: 'type', label: 'Type Options' },
+                      { key: 'revenueCategories', label: 'Revenue Categories' },
+                      { key: 'expenseCategories', label: 'Expense Categories' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="space-y-3">
+                        <Label className="text-sm font-medium">{label}</Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {tempRevenueExpenseDropdownOptions[key as keyof typeof tempRevenueExpenseDropdownOptions].map((option: string) => (
+                            <Badge key={option} variant="secondary" className="flex items-center gap-1">
+                              {option}
+                              <button
+                                onClick={() => {
+                                  setTempRevenueExpenseDropdownOptions(prev => ({
+                                    ...prev,
+                                    [key]: prev[key as keyof typeof prev].filter((item: string) => item !== option)
+                                  }));
+                                }}
+                                className="ml-1 hover:text-destructive"
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add new ${label.toLowerCase()}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const input = e.target as HTMLInputElement;
+                                const newOption = input.value.trim();
+                                if (newOption && !tempRevenueExpenseDropdownOptions[key as keyof typeof tempRevenueExpenseDropdownOptions].includes(newOption)) {
+                                  setTempRevenueExpenseDropdownOptions(prev => ({
+                                    ...prev,
+                                    [key]: [...prev[key as keyof typeof prev], newOption]
+                                  }));
+                                  input.value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </TableCell>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleRevenueExpenseDropdownConfigCancel}>Cancel</Button>
+                    <Button onClick={handleRevenueExpenseDropdownConfigSave}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isRevenueExpenseDialogOpen} onOpenChange={setIsRevenueExpenseDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingRevenueExpense ? 'Edit Revenue/Expense' : 'Add New Revenue/Expense'}</DialogTitle>
+                    <DialogDescription>
+                      {editingRevenueExpense ? 'Update the revenue/expense record details.' : 'Enter the details for the new revenue/expense record.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={revenueExpenseForm.date}
+                          onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, date: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="type">Type</Label>
+                        <Select value={revenueExpenseForm.type} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, type: value, category: ""})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {revenueExpenseDropdownOptions.type.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Select value={revenueExpenseForm.category} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, category: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getCategories().map((category) => (
+                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="amount">Amount</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          value={revenueExpenseForm.amount}
+                          onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, amount: parseFloat(e.target.value) || 0})}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={revenueExpenseForm.description}
+                        onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, description: e.target.value})}
+                        placeholder="Enter description..."
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsRevenueExpenseDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleRevenueExpenseSubmit}>
+                      {editingRevenueExpense ? 'Update' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredRevenueExpense.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.revenue_expense_id}</TableCell>
+                  <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={item.type === 'Revenue' ? 'default' : 'secondary'}>
+                      {item.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                  <TableCell className={`font-medium ${item.type === 'Revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                    ${item.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleRevenueExpenseView(item)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRevenueExpenseEdit(item)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleRevenueExpenseDelete(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {/* View Dialog */}
+          <Dialog open={isRevenueExpenseViewDialogOpen} onOpenChange={setIsRevenueExpenseViewDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Revenue/Expense Details</DialogTitle>
+                <DialogDescription>
+                  Detailed view of the revenue/expense record.
+                </DialogDescription>
+              </DialogHeader>
+              {viewingRevenueExpense && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="text-sm font-mono">{viewingRevenueExpense.revenue_expense_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                      <p className="text-sm">{new Date(viewingRevenueExpense.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                      <Badge variant={viewingRevenueExpense.type === 'Revenue' ? 'default' : 'secondary'}>
+                        {viewingRevenueExpense.type}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p className="text-sm">{viewingRevenueExpense.category}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+                    <p className={`text-lg font-medium ${viewingRevenueExpense.type === 'Revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                      ${viewingRevenueExpense.amount.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap">{viewingRevenueExpense.description}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRevenueExpenseViewDialogOpen(false)}>
+                  Close
+                </Button>
+                {viewingRevenueExpense && (
+                  <Button onClick={() => {
+                    setIsRevenueExpenseViewDialogOpen(false);
+                    handleRevenueExpenseEdit(viewingRevenueExpense);
+                  }}>
+                    Edit Record
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       );
     }
 
