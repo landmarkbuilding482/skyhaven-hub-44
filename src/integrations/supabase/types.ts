@@ -44,39 +44,6 @@ export type Database = {
         }
         Relationships: []
       }
-      foot_traffic: {
-        Row: {
-          company: string
-          created_at: string
-          date: string
-          floor: string
-          id: string
-          purpose: string
-          time: string
-          updated_at: string
-        }
-        Insert: {
-          company: string
-          created_at?: string
-          date?: string
-          floor: string
-          id?: string
-          purpose?: string
-          time: string
-          updated_at?: string
-        }
-        Update: {
-          company?: string
-          created_at?: string
-          date?: string
-          floor?: string
-          id?: string
-          purpose?: string
-          time?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       lease_agreements: {
         Row: {
           contract_file_path: string | null
