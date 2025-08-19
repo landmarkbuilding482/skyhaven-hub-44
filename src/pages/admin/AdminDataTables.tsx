@@ -66,6 +66,7 @@ const AdminDataTables = () => {
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
+  const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
@@ -95,13 +96,18 @@ const AdminDataTables = () => {
     status: "Reported"
   });
 
-  // Dropdown options
-  const issueReporterOptions = ["Maintenance Team", "Building Supervisor", "Other"];
-  const issueTypeOptions = ["HVAC", "Plumbing", "Electrical", "Structural", "Cleaning", "Security", "IT/Technology", "Other"];
-  const materialAffectedOptions = ["Walls", "Flooring", "Ceiling", "Windows", "Doors", "Fixtures", "Equipment", "Systems", "Other"];
-  const assignedVendorOptions = ["Cool Air Systems", "Quick Fix Plumbing", "Bright Electric", "Structural Solutions", "Clean Pro", "SecureTech", "Other"];
-  const statusOptions = ["Reported", "In Progress", "Pending", "Completed", "Cancelled"];
-  const floorOptions = ["G", "1", "2", "3", "4", "5", "6", "7", "8", "B"];
+  // Dropdown options state
+  const [dropdownOptions, setDropdownOptions] = useState({
+    issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
+    issueType: ["HVAC", "Plumbing", "Electrical", "Structural", "Cleaning", "Security", "IT/Technology", "Other"],
+    materialAffected: ["Walls", "Flooring", "Ceiling", "Windows", "Doors", "Fixtures", "Equipment", "Systems", "Other"],
+    assignedVendor: ["Cool Air Systems", "Quick Fix Plumbing", "Bright Electric", "Structural Solutions", "Clean Pro", "SecureTech", "Other"],
+    status: ["Reported", "In Progress", "Pending", "Completed", "Cancelled"],
+    floor: ["G", "1", "2", "3", "4", "5", "6", "7", "8", "B"]
+  });
+
+  // Temp dropdown options for editing
+  const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -413,6 +419,34 @@ const AdminDataTables = () => {
     
     toast.success('Maintenance record deleted successfully');
     fetchMaintenanceData();
+  };
+
+  // Dropdown configuration functions
+  const handleDropdownConfigSave = () => {
+    setDropdownOptions(tempDropdownOptions);
+    setIsDropdownConfigOpen(false);
+    toast.success('Dropdown options updated successfully');
+  };
+
+  const handleDropdownConfigCancel = () => {
+    setTempDropdownOptions(dropdownOptions);
+    setIsDropdownConfigOpen(false);
+  };
+
+  const addDropdownOption = (category: string, newOption: string) => {
+    if (newOption.trim() && !tempDropdownOptions[category as keyof typeof tempDropdownOptions].includes(newOption.trim())) {
+      setTempDropdownOptions(prev => ({
+        ...prev,
+        [category]: [...prev[category as keyof typeof prev], newOption.trim()]
+      }));
+    }
+  };
+
+  const removeDropdownOption = (category: string, optionToRemove: string) => {
+    setTempDropdownOptions(prev => ({
+      ...prev,
+      [category]: prev[category as keyof typeof prev].filter(option => option !== optionToRemove)
+    }));
   };
 
   // Mock data for other tables
@@ -1013,6 +1047,75 @@ const AdminDataTables = () => {
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Maintenance & Repairs</h3>
+            <div className="flex gap-2">
+              <Dialog open={isDropdownConfigOpen} onOpenChange={setIsDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => setTempDropdownOptions(dropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure Dropdown Options</DialogTitle>
+                    <DialogDescription>
+                      Manage the dropdown options for maintenance form fields
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    {Object.entries(tempDropdownOptions).map(([category, options]) => (
+                      <div key={category} className="space-y-3">
+                        <h4 className="font-semibold capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {options.map((option, index) => (
+                            <div key={index} className="flex items-center gap-2 bg-secondary px-2 py-1 rounded">
+                              <span className="text-sm">{option}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-4 w-4 p-0"
+                                onClick={() => removeDropdownOption(category, option)}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add new ${category.replace(/([A-Z])/g, ' $1').toLowerCase()} option`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                addDropdownOption(category, e.currentTarget.value);
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              addDropdownOption(category, input.value);
+                              input.value = '';
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleDropdownConfigCancel}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleDropdownConfigSave}>
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
             <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="default" size="sm" onClick={() => {
@@ -1058,7 +1161,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select floor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {floorOptions.map((floor) => (
+                          {dropdownOptions.floor.map((floor) => (
                             <SelectItem key={floor} value={floor}>{floor}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1073,7 +1176,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select reporter" />
                         </SelectTrigger>
                         <SelectContent>
-                          {issueReporterOptions.map((reporter) => (
+                          {dropdownOptions.issueReporter.map((reporter) => (
                             <SelectItem key={reporter} value={reporter}>{reporter}</SelectItem>
                           ))}
                           {tenantsList.map((tenant) => (
@@ -1089,7 +1192,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select issue type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {issueTypeOptions.map((type) => (
+                          {dropdownOptions.issueType.map((type) => (
                             <SelectItem key={type} value={type}>{type}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1104,7 +1207,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select material" />
                         </SelectTrigger>
                         <SelectContent>
-                          {materialAffectedOptions.map((material) => (
+                          {dropdownOptions.materialAffected.map((material) => (
                             <SelectItem key={material} value={material}>{material}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1117,7 +1220,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select vendor" />
                         </SelectTrigger>
                         <SelectContent>
-                          {assignedVendorOptions.map((vendor) => (
+                          {dropdownOptions.assignedVendor.map((vendor) => (
                             <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
                           ))}
                         </SelectContent>
@@ -1150,7 +1253,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {statusOptions.map((status) => (
+                          {dropdownOptions.status.map((status) => (
                             <SelectItem key={status} value={status}>{status}</SelectItem>
                           ))}
                         </SelectContent>
