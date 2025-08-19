@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, Upload, Edit, Trash2 } from "lucide-react";
+import { Eye, Upload, Edit, Trash2, Plus } from "lucide-react";
 import TenantsTable from "@/components/tenants/TenantsTable";
 import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
 import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
@@ -396,7 +396,13 @@ const AdminDataTables = () => {
         return <div className="space-y-6">
             {/* Main Occupancy Table for Floors 8-G */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Floor Occupancy (Floors 8-G)</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Floor Occupancy (Floors 8-G)</h3>
+            <Button variant="default" size="sm">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Entry
+            </Button>
+          </div>
               <Table>
                 <TableHeader>
                   <TableRow>
