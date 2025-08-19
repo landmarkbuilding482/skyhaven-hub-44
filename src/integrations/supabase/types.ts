@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      floor_occupancy: {
+        Row: {
+          created_at: string
+          floor: string
+          id: string
+          square_meters_available: number
+          square_meters_occupied: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          floor: string
+          id?: string
+          square_meters_available?: number
+          square_meters_occupied?: number
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          floor?: string
+          id?: string
+          square_meters_available?: number
+          square_meters_occupied?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lease_agreements: {
         Row: {
           contract_file_path: string | null
@@ -60,6 +90,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      parking_allocations: {
+        Row: {
+          company: string
+          created_at: string
+          id: string
+          spots_allowed: number
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          id?: string
+          spots_allowed?: number
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          id?: string
+          spots_allowed?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parking_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          spots_available: number
+          spots_occupied: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spots_available?: number
+          spots_occupied?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spots_available?: number
+          spots_occupied?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       rent_payments: {
         Row: {
