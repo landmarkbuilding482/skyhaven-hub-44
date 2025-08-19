@@ -203,7 +203,12 @@ const AdminDataTables = () => {
 
             {/* B Floor Companies Table */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">B Floor - Company Parking Allocations</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">B Floor - Company Parking Allocations</h3>
+                <Button variant="default" size="sm">
+                  Add Entry
+                </Button>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -218,9 +223,14 @@ const AdminDataTables = () => {
                       <TableCell className="font-medium">{company.company}</TableCell>
                       <TableCell>{company.spotsAllowed}</TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
