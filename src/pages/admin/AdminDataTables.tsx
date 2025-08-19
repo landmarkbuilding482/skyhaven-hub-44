@@ -207,6 +207,102 @@ const AdminDataTables = () => {
     }
   }, [selectedTable]);
 
+  // Add sample data function
+  const addSampleMaintenanceData = async () => {
+    const sampleData = [
+      {
+        date_reported: '2024-08-15',
+        floor: '3',
+        issue_reporter: 'Building Supervisor',
+        issue_type: 'HVAC',
+        material_affected: 'Equipment',
+        description: 'Air conditioning unit making loud noises and not cooling properly',
+        assigned_vendor: 'Cool Air Systems',
+        cost: 850,
+        status: 'In Progress'
+      },
+      {
+        date_reported: '2024-08-14',
+        floor: '7',
+        issue_reporter: 'Maintenance Team',
+        issue_type: 'Plumbing',
+        material_affected: 'Fixtures',
+        description: 'Leaky faucet in employee break room',
+        assigned_vendor: 'Quick Fix Plumbing',
+        cost: 120,
+        status: 'Completed'
+      },
+      {
+        date_reported: '2024-08-13',
+        floor: 'G',
+        issue_reporter: 'Tech Innovators Inc.',
+        issue_type: 'Electrical',
+        material_affected: 'Systems',
+        description: 'Flickering lights in lobby area affecting visibility',
+        assigned_vendor: 'Bright Electric',
+        cost: 300,
+        status: 'Pending'
+      },
+      {
+        date_reported: '2024-08-12',
+        floor: '5',
+        issue_reporter: 'Building Supervisor',
+        issue_type: 'Structural',
+        material_affected: 'Ceiling',
+        description: 'Water stain on ceiling tiles, possible roof leak',
+        assigned_vendor: 'Structural Solutions',
+        cost: 1200,
+        status: 'Reported'
+      },
+      {
+        date_reported: '2024-08-11',
+        floor: '2',
+        issue_reporter: 'Green Solutions Ltd.',
+        issue_type: 'Cleaning',
+        material_affected: 'Flooring',
+        description: 'Coffee stain on carpet in conference room needs professional cleaning',
+        assigned_vendor: 'Clean Pro',
+        cost: 80,
+        status: 'Completed'
+      },
+      {
+        date_reported: '2024-08-10',
+        floor: '4',
+        issue_reporter: 'Maintenance Team',
+        issue_type: 'Security',
+        material_affected: 'Equipment',
+        description: 'Security camera in hallway stopped working, needs replacement',
+        assigned_vendor: 'SecureTech',
+        cost: 450,
+        status: 'In Progress'
+      },
+      {
+        date_reported: '2024-08-09',
+        floor: '6',
+        issue_reporter: 'Other',
+        issue_type: 'IT/Technology',
+        material_affected: 'Systems',
+        description: 'WiFi router malfunction causing connectivity issues for entire floor',
+        assigned_vendor: 'Other',
+        cost: 200,
+        status: 'Pending'
+      }
+    ];
+
+    const { error } = await supabase
+      .from('maintenance_repairs')
+      .insert(sampleData);
+
+    if (error) {
+      toast.error('Failed to add sample data');
+      console.error(error);
+      return;
+    }
+
+    toast.success('Added 7 sample maintenance records');
+    fetchMaintenanceData();
+  };
+
   // CRUD functions for floor occupancy
   const handleFloorSubmit = async () => {
     if (editingFloor) {
@@ -1115,6 +1211,9 @@ const AdminDataTables = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              <Button variant="outline" size="sm" onClick={addSampleMaintenanceData}>
+                Add Sample Data
+              </Button>
             </div>
             <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
               <DialogTrigger asChild>
