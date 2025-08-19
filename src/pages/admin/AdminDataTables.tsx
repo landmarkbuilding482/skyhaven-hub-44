@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { Eye, Upload, Edit, Trash2, Plus } from "lucide-react";
 import TenantsTable from "@/components/tenants/TenantsTable";
 import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
@@ -34,6 +35,20 @@ type ParkingStatistics = {
   spots_occupied: number;
 };
 
+type MaintenanceRepair = {
+  id: string;
+  date_reported: string;
+  floor: string;
+  issue_reporter: string;
+  issue_type: string;
+  material_affected: string;
+  description: string;
+  assigned_vendor: string | null;
+  cost: number;
+  status: string;
+  completion_date: string | null;
+};
+
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,11 +58,17 @@ const AdminDataTables = () => {
   const [parkingAllocations, setParkingAllocations] = useState<ParkingAllocation[]>([]);
   const [parkingStats, setParkingStats] = useState<ParkingStatistics | null>(null);
   
+  // State for maintenance data
+  const [maintenanceData, setMaintenanceData] = useState<MaintenanceRepair[]>([]);
+  const [tenantsList, setTenantsList] = useState<string[]>([]);
+  
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
+  const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
+  const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   
   // Form states
   const [floorForm, setFloorForm] = useState({
@@ -61,6 +82,26 @@ const AdminDataTables = () => {
     company: "",
     spots_allowed: 0
   });
+
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    date_reported: new Date().toISOString().split('T')[0],
+    floor: "",
+    issue_reporter: "",
+    issue_type: "",
+    material_affected: "",
+    description: "",
+    assigned_vendor: "",
+    cost: 0,
+    status: "Reported"
+  });
+
+  // Dropdown options
+  const issueReporterOptions = ["Maintenance Team", "Building Supervisor", "Other"];
+  const issueTypeOptions = ["HVAC", "Plumbing", "Electrical", "Structural", "Cleaning", "Security", "IT/Technology", "Other"];
+  const materialAffectedOptions = ["Walls", "Flooring", "Ceiling", "Windows", "Doors", "Fixtures", "Equipment", "Systems", "Other"];
+  const assignedVendorOptions = ["Cool Air Systems", "Quick Fix Plumbing", "Bright Electric", "Structural Solutions", "Clean Pro", "SecureTech", "Other"];
+  const statusOptions = ["Reported", "In Progress", "Pending", "Completed", "Cancelled"];
+  const floorOptions = ["G", "1", "2", "3", "4", "5", "6", "7", "8", "B"];
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -120,11 +161,43 @@ const AdminDataTables = () => {
     setParkingStats(data);
   };
 
+  // Fetch maintenance data functions
+  const fetchMaintenanceData = async () => {
+    const { data, error } = await supabase
+      .from('maintenance_repairs')
+      .select('*')
+      .order('date_reported', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch maintenance data');
+      return;
+    }
+    
+    setMaintenanceData(data || []);
+  };
+
+  const fetchTenantsList = async () => {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('name')
+      .order('name');
+    
+    if (error) {
+      console.error('Failed to fetch tenants list:', error);
+      return;
+    }
+    
+    setTenantsList(data?.map(tenant => tenant.name) || []);
+  };
+
   useEffect(() => {
     if (selectedTable === 'occupancy') {
       fetchFloorData();
       fetchParkingAllocations();
       fetchParkingStats();
+    } else if (selectedTable === 'maintenance') {
+      fetchMaintenanceData();
+      fetchTenantsList();
     }
   }, [selectedTable]);
 
@@ -264,6 +337,82 @@ const AdminDataTables = () => {
     
     setParkingStats({ ...parkingStats, [field]: value });
     toast.success('Parking statistics updated');
+  };
+
+  // CRUD functions for maintenance repairs
+  const handleMaintenanceSubmit = async () => {
+    if (editingMaintenance) {
+      // Update existing maintenance
+      const { error } = await supabase
+        .from('maintenance_repairs')
+        .update(maintenanceForm)
+        .eq('id', editingMaintenance.id);
+      
+      if (error) {
+        toast.error('Failed to update maintenance record');
+        return;
+      }
+      
+      toast.success('Maintenance record updated successfully');
+    } else {
+      // Create new maintenance
+      const { error } = await supabase
+        .from('maintenance_repairs')
+        .insert([maintenanceForm]);
+      
+      if (error) {
+        toast.error('Failed to create maintenance record');
+        return;
+      }
+      
+      toast.success('Maintenance record created successfully');
+    }
+    
+    setIsMaintenanceDialogOpen(false);
+    setEditingMaintenance(null);
+    setMaintenanceForm({
+      date_reported: new Date().toISOString().split('T')[0],
+      floor: "",
+      issue_reporter: "",
+      issue_type: "",
+      material_affected: "",
+      description: "",
+      assigned_vendor: "",
+      cost: 0,
+      status: "Reported"
+    });
+    fetchMaintenanceData();
+  };
+
+  const handleMaintenanceEdit = (maintenance: MaintenanceRepair) => {
+    setEditingMaintenance(maintenance);
+    setMaintenanceForm({
+      date_reported: maintenance.date_reported,
+      floor: maintenance.floor,
+      issue_reporter: maintenance.issue_reporter,
+      issue_type: maintenance.issue_type,
+      material_affected: maintenance.material_affected,
+      description: maintenance.description,
+      assigned_vendor: maintenance.assigned_vendor || "",
+      cost: maintenance.cost,
+      status: maintenance.status
+    });
+    setIsMaintenanceDialogOpen(true);
+  };
+
+  const handleMaintenanceDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('maintenance_repairs')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete maintenance record');
+      return;
+    }
+    
+    toast.success('Maintenance record deleted successfully');
+    fetchMaintenanceData();
   };
 
   // Mock data for other tables
@@ -852,54 +1001,221 @@ const AdminDataTables = () => {
       )
     );
 
-    // Render different table structures based on selected table
+    // Handle maintenance table with real backend
     if (selectedTable === 'maintenance') {
+      const filteredMaintenanceData = maintenanceData.filter((item) =>
+        Object.values(item).some(value =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Date Reported</TableHead>
-              <TableHead>Floor</TableHead>
-              <TableHead>Issue Type</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Assigned Vendor</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Completion Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.dateReported}</TableCell>
-                <TableCell>{item.floor}</TableCell>
-                <TableCell>{item.issueType}</TableCell>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>{item.assignedVendor}</TableCell>
-                <TableCell>{item.cost}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.completionDate}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Maintenance & Repairs</h3>
+            <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm" onClick={() => {
+                  setEditingMaintenance(null);
+                  setMaintenanceForm({
+                    date_reported: new Date().toISOString().split('T')[0],
+                    floor: "",
+                    issue_reporter: "",
+                    issue_type: "",
+                    material_affected: "",
+                    description: "",
+                    assigned_vendor: "",
+                    cost: 0,
+                    status: "Reported"
+                  });
+                }}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Entry
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{editingMaintenance ? 'Edit Maintenance Record' : 'Add Maintenance Record'}</DialogTitle>
+                  <DialogDescription>
+                    {editingMaintenance ? 'Update maintenance record information' : 'Add new maintenance record information'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date_reported">Date Reported</Label>
+                      <Input
+                        id="date_reported"
+                        type="date"
+                        value={maintenanceForm.date_reported}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, date_reported: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="floor">Floor</Label>
+                      <Select value={maintenanceForm.floor} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, floor: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select floor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {floorOptions.map((floor) => (
+                            <SelectItem key={floor} value={floor}>{floor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </TableCell>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="issue_reporter">Issue Reporter</Label>
+                      <Select value={maintenanceForm.issue_reporter} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_reporter: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select reporter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {issueReporterOptions.map((reporter) => (
+                            <SelectItem key={reporter} value={reporter}>{reporter}</SelectItem>
+                          ))}
+                          {tenantsList.map((tenant) => (
+                            <SelectItem key={tenant} value={tenant}>{tenant}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="issue_type">Issue Type</Label>
+                      <Select value={maintenanceForm.issue_type} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_type: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select issue type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {issueTypeOptions.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="material_affected">Material Affected</Label>
+                      <Select value={maintenanceForm.material_affected} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, material_affected: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {materialAffectedOptions.map((material) => (
+                            <SelectItem key={material} value={material}>{material}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assigned_vendor">Assigned Vendor</Label>
+                      <Select value={maintenanceForm.assigned_vendor} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, assigned_vendor: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assignedVendorOptions.map((vendor) => (
+                            <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={maintenanceForm.description}
+                      onChange={(e) => setMaintenanceForm({ ...maintenanceForm, description: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cost">Cost</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        value={maintenanceForm.cost}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, cost: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={maintenanceForm.status} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, status: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={handleMaintenanceSubmit}>
+                    {editingMaintenance ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date Reported</TableHead>
+                <TableHead>Floor</TableHead>
+                <TableHead>Issue Reporter</TableHead>
+                <TableHead>Issue Type</TableHead>
+                <TableHead>Material Affected</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Assigned Vendor</TableHead>
+                <TableHead>Cost</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Completion Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredMaintenanceData.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{item.id.slice(0, 8)}...</TableCell>
+                  <TableCell>{new Date(item.date_reported).toLocaleDateString()}</TableCell>
+                  <TableCell>{item.floor}</TableCell>
+                  <TableCell>{item.issue_reporter}</TableCell>
+                  <TableCell>{item.issue_type}</TableCell>
+                  <TableCell>{item.material_affected}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                  <TableCell>{item.assigned_vendor || '-'}</TableCell>
+                  <TableCell>${item.cost.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(item.status)}>
+                      {item.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{item.completion_date ? new Date(item.completion_date).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleMaintenanceEdit(item)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleMaintenanceDelete(item.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       );
     }
 

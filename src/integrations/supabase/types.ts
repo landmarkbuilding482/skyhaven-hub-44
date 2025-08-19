@@ -91,6 +91,54 @@ export type Database = {
           },
         ]
       }
+      maintenance_repairs: {
+        Row: {
+          assigned_vendor: string | null
+          completion_date: string | null
+          cost: number | null
+          created_at: string
+          date_reported: string
+          description: string
+          floor: string
+          id: string
+          issue_reporter: string
+          issue_type: string
+          material_affected: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_vendor?: string | null
+          completion_date?: string | null
+          cost?: number | null
+          created_at?: string
+          date_reported?: string
+          description: string
+          floor: string
+          id?: string
+          issue_reporter: string
+          issue_type: string
+          material_affected: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_vendor?: string | null
+          completion_date?: string | null
+          cost?: number | null
+          created_at?: string
+          date_reported?: string
+          description?: string
+          floor?: string
+          id?: string
+          issue_reporter?: string
+          issue_type?: string
+          material_affected?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parking_allocations: {
         Row: {
           company: string
