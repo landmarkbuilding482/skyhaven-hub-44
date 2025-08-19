@@ -79,6 +79,20 @@ type RevenueExpense = {
   amount: number;
 };
 
+type AssetInventory = {
+  id: string;
+  asset_id: string;
+  asset_name: string;
+  category: string;
+  purchase_date: string;
+  value: number;
+  condition: string;
+  last_maintenance: string | null;
+  next_maintenance: string | null;
+  warranty_month: number | null;
+  warranty_year: number | null;
+};
+
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -103,6 +117,9 @@ const AdminDataTables = () => {
   // State for revenue & expenses data
   const [revenueExpenseData, setRevenueExpenseData] = useState<RevenueExpense[]>([]);
   
+  // State for asset inventory data
+  const [assetInventoryData, setAssetInventoryData] = useState<AssetInventory[]>([]);
+  
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
@@ -113,11 +130,14 @@ const AdminDataTables = () => {
   const [isFeedbackViewDialogOpen, setIsFeedbackViewDialogOpen] = useState(false);
   const [isRevenueExpenseDialogOpen, setIsRevenueExpenseDialogOpen] = useState(false);
   const [isRevenueExpenseViewDialogOpen, setIsRevenueExpenseViewDialogOpen] = useState(false);
+  const [isAssetInventoryDialogOpen, setIsAssetInventoryDialogOpen] = useState(false);
+  const [isAssetInventoryViewDialogOpen, setIsAssetInventoryViewDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
   const [isFeedbackDropdownConfigOpen, setIsFeedbackDropdownConfigOpen] = useState(false);
   const [isRevenueExpenseDropdownConfigOpen, setIsRevenueExpenseDropdownConfigOpen] = useState(false);
+  const [isAssetInventoryDropdownConfigOpen, setIsAssetInventoryDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
@@ -126,6 +146,8 @@ const AdminDataTables = () => {
   const [viewingFeedback, setViewingFeedback] = useState<FeedbackComplaint | null>(null);
   const [editingRevenueExpense, setEditingRevenueExpense] = useState<RevenueExpense | null>(null);
   const [viewingRevenueExpense, setViewingRevenueExpense] = useState<RevenueExpense | null>(null);
+  const [editingAssetInventory, setEditingAssetInventory] = useState<AssetInventory | null>(null);
+  const [viewingAssetInventory, setViewingAssetInventory] = useState<AssetInventory | null>(null);
   
   
   // Form states
@@ -177,6 +199,18 @@ const AdminDataTables = () => {
     amount: 0
   });
 
+  const [assetInventoryForm, setAssetInventoryForm] = useState({
+    asset_name: "",
+    category: "",
+    purchase_date: new Date().toISOString().split('T')[0],
+    value: 0,
+    condition: "Good",
+    last_maintenance: "",
+    next_maintenance: "",
+    warranty_month: "",
+    warranty_year: ""
+  });
+
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -207,11 +241,18 @@ const AdminDataTables = () => {
     expenseCategories: ["Maintenance", "Utilities", "Insurance", "Property Tax", "Management Fees", "Marketing", "Legal Fees", "Office Supplies", "Other Expenses"]
   });
 
+  // Asset Inventory dropdown options state
+  const [assetInventoryDropdownOptions, setAssetInventoryDropdownOptions] = useState({
+    category: ["Furniture", "Electronics", "HVAC Equipment", "Office Equipment", "Security Systems", "Maintenance Tools", "Other"],
+    condition: ["Excellent", "Good", "Needs Repairment", "Needs Replacement"]
+  });
+
   // Temp dropdown options for editing
   const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
   const [tempUtilitiesDropdownOptions, setTempUtilitiesDropdownOptions] = useState(utilitiesDropdownOptions);
   const [tempFeedbackDropdownOptions, setTempFeedbackDropdownOptions] = useState(feedbackDropdownOptions);
   const [tempRevenueExpenseDropdownOptions, setTempRevenueExpenseDropdownOptions] = useState(revenueExpenseDropdownOptions);
+  const [tempAssetInventoryDropdownOptions, setTempAssetInventoryDropdownOptions] = useState(assetInventoryDropdownOptions);
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -365,6 +406,21 @@ const AdminDataTables = () => {
     setRevenueExpenseData(data || []);
   };
 
+  // Fetch asset inventory data
+  const fetchAssetInventoryData = async () => {
+    const { data, error } = await supabase
+      .from('asset_inventory')
+      .select('*')
+      .order('purchase_date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch asset inventory data');
+      return;
+    }
+    
+    setAssetInventoryData(data || []);
+  };
+
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -381,6 +437,8 @@ const AdminDataTables = () => {
       fetchTenants();
     } else if (selectedTable === 'revenue') {
       fetchRevenueExpenseData();
+    } else if (selectedTable === 'assets') {
+      fetchAssetInventoryData();
     }
   }, [selectedTable]);
 
@@ -829,6 +887,99 @@ const AdminDataTables = () => {
     setIsRevenueExpenseViewDialogOpen(true);
   };
 
+  // CRUD functions for asset inventory
+  const handleAssetInventorySubmit = async () => {
+    const formData = {
+      asset_name: assetInventoryForm.asset_name,
+      category: assetInventoryForm.category,
+      purchase_date: assetInventoryForm.purchase_date,
+      value: Number(assetInventoryForm.value),
+      condition: assetInventoryForm.condition,
+      last_maintenance: assetInventoryForm.last_maintenance || null,
+      next_maintenance: assetInventoryForm.next_maintenance || null,
+      warranty_month: assetInventoryForm.warranty_month ? Number(assetInventoryForm.warranty_month) : null,
+      warranty_year: assetInventoryForm.warranty_year ? Number(assetInventoryForm.warranty_year) : null
+    };
+
+    if (editingAssetInventory) {
+      // Update existing asset
+      const { error } = await supabase
+        .from('asset_inventory')
+        .update(formData)
+        .eq('id', editingAssetInventory.id);
+      
+      if (error) {
+        toast.error('Failed to update asset');
+        return;
+      }
+      
+      toast.success('Asset updated successfully');
+    } else {
+      // Create new asset
+      const { error } = await supabase
+        .from('asset_inventory')
+        .insert([formData]);
+      
+      if (error) {
+        toast.error('Failed to add asset');
+        return;
+      }
+      
+      toast.success('Asset added successfully');
+    }
+    
+    setIsAssetInventoryDialogOpen(false);
+    setEditingAssetInventory(null);
+    setAssetInventoryForm({
+      asset_name: "",
+      category: "",
+      purchase_date: new Date().toISOString().split('T')[0],
+      value: 0,
+      condition: "Good",
+      last_maintenance: "",
+      next_maintenance: "",
+      warranty_month: "",
+      warranty_year: ""
+    });
+    fetchAssetInventoryData();
+  };
+
+  const handleAssetInventoryEdit = (asset: AssetInventory) => {
+    setEditingAssetInventory(asset);
+    setAssetInventoryForm({
+      asset_name: asset.asset_name,
+      category: asset.category,
+      purchase_date: asset.purchase_date,
+      value: asset.value,
+      condition: asset.condition,
+      last_maintenance: asset.last_maintenance || "",
+      next_maintenance: asset.next_maintenance || "",
+      warranty_month: asset.warranty_month?.toString() || "",
+      warranty_year: asset.warranty_year?.toString() || ""
+    });
+    setIsAssetInventoryDialogOpen(true);
+  };
+
+  const handleAssetInventoryDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('asset_inventory')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete asset');
+      return;
+    }
+    
+    toast.success('Asset deleted successfully');
+    fetchAssetInventoryData();
+  };
+
+  const handleAssetInventoryView = (asset: AssetInventory) => {
+    setViewingAssetInventory(asset);
+    setIsAssetInventoryViewDialogOpen(true);
+  };
+
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -876,6 +1027,18 @@ const AdminDataTables = () => {
   const handleRevenueExpenseDropdownConfigCancel = () => {
     setTempRevenueExpenseDropdownOptions(revenueExpenseDropdownOptions);
     setIsRevenueExpenseDropdownConfigOpen(false);
+  };
+
+  // Asset Inventory dropdown configuration functions
+  const handleAssetInventoryDropdownConfigSave = () => {
+    setAssetInventoryDropdownOptions(tempAssetInventoryDropdownOptions);
+    setIsAssetInventoryDropdownConfigOpen(false);
+    toast.success('Asset Inventory dropdown options updated successfully');
+  };
+
+  const handleAssetInventoryDropdownConfigCancel = () => {
+    setTempAssetInventoryDropdownOptions(assetInventoryDropdownOptions);
+    setIsAssetInventoryDropdownConfigOpen(false);
   };
 
   const addDropdownOption = (category: string, newOption: string) => {
@@ -2490,52 +2653,413 @@ const AdminDataTables = () => {
     }
 
     if (selectedTable === 'assets') {
+      const filteredAssetInventory = assetInventoryData.filter(item =>
+        item.asset_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.asset_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.condition.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const isWarrantyActive = (month: number | null, year: number | null) => {
+        if (!month || !year) return false;
+        const warrantyDate = new Date(year, month - 1); // month is 0-indexed in Date
+        const currentDate = new Date();
+        return warrantyDate >= currentDate;
+      };
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Asset Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Purchase Date</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>Condition</TableHead>
-              <TableHead>Last Maintenance</TableHead>
-              <TableHead>Next Maintenance</TableHead>
-              <TableHead>Warranty</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.assetName}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>{item.purchaseDate}</TableCell>
-                <TableCell>{item.value}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.condition)}>
-                    {item.condition}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.lastMaintenance}</TableCell>
-                <TableCell>{item.nextMaintenance}</TableCell>
-                <TableCell>{item.warranty}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Asset Inventory</h3>
+            <div className="flex gap-2">
+              <Dialog open={isAssetInventoryDropdownConfigOpen} onOpenChange={setIsAssetInventoryDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" onClick={() => setTempAssetInventoryDropdownOptions(assetInventoryDropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Configure Asset Inventory Dropdowns</DialogTitle>
+                    <DialogDescription>
+                      Manage dropdown options for asset inventory fields
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Categories</Label>
+                      {tempAssetInventoryDropdownOptions.category.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2 mt-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...tempAssetInventoryDropdownOptions.category];
+                              newOptions[index] = e.target.value;
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                category: newOptions
+                              });
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newOptions = tempAssetInventoryDropdownOptions.category.filter((_, i) => i !== index);
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                category: newOptions
+                              });
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          setTempAssetInventoryDropdownOptions({
+                            ...tempAssetInventoryDropdownOptions,
+                            category: [...tempAssetInventoryDropdownOptions.category, 'New Category']
+                          });
+                        }}
+                      >
+                        Add Category
+                      </Button>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Conditions</Label>
+                      {tempAssetInventoryDropdownOptions.condition.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2 mt-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...tempAssetInventoryDropdownOptions.condition];
+                              newOptions[index] = e.target.value;
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                condition: newOptions
+                              });
+                            }}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newOptions = tempAssetInventoryDropdownOptions.condition.filter((_, i) => i !== index);
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                condition: newOptions
+                              });
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          setTempAssetInventoryDropdownOptions({
+                            ...tempAssetInventoryDropdownOptions,
+                            condition: [...tempAssetInventoryDropdownOptions.condition, 'New Condition']
+                          });
+                        }}
+                      >
+                        Add Condition
+                      </Button>
+                    </div>
                   </div>
-                </TableCell>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleAssetInventoryDropdownConfigCancel}>Cancel</Button>
+                    <Button onClick={handleAssetInventoryDropdownConfigSave}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isAssetInventoryDialogOpen} onOpenChange={setIsAssetInventoryDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setEditingAssetInventory(null);
+                    setAssetInventoryForm({
+                      asset_name: "",
+                      category: "",
+                      purchase_date: new Date().toISOString().split('T')[0],
+                      value: 0,
+                      condition: "Good",
+                      last_maintenance: "",
+                      next_maintenance: "",
+                      warranty_month: "",
+                      warranty_year: ""
+                    });
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingAssetInventory ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+                    <DialogDescription>
+                      {editingAssetInventory ? 'Update asset information' : 'Add new asset to inventory'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="asset_name">Asset Name</Label>
+                        <Input
+                          id="asset_name"
+                          value={assetInventoryForm.asset_name}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, asset_name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Select
+                          value={assetInventoryForm.category}
+                          onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, category: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assetInventoryDropdownOptions.category.map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="purchase_date">Purchase Date</Label>
+                        <Input
+                          id="purchase_date"
+                          type="date"
+                          value={assetInventoryForm.purchase_date}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, purchase_date: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="value">Value</Label>
+                        <Input
+                          id="value"
+                          type="number"
+                          value={assetInventoryForm.value}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, value: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="condition">Condition</Label>
+                      <Select
+                        value={assetInventoryForm.condition}
+                        onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, condition: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select condition" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {assetInventoryDropdownOptions.condition.map((option) => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="last_maintenance">Last Maintenance</Label>
+                        <Input
+                          id="last_maintenance"
+                          type="date"
+                          value={assetInventoryForm.last_maintenance}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, last_maintenance: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="next_maintenance">Next Maintenance</Label>
+                        <Input
+                          id="next_maintenance"
+                          type="date"
+                          value={assetInventoryForm.next_maintenance}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, next_maintenance: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="warranty_month">Warranty Month</Label>
+                        <Input
+                          id="warranty_month"
+                          type="number"
+                          min="1"
+                          max="12"
+                          placeholder="1-12"
+                          value={assetInventoryForm.warranty_month}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, warranty_month: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="warranty_year">Warranty Year</Label>
+                        <Input
+                          id="warranty_year"
+                          type="number"
+                          min="2020"
+                          max="2050"
+                          placeholder="e.g., 2025"
+                          value={assetInventoryForm.warranty_year}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, warranty_year: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAssetInventoryDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAssetInventorySubmit}>
+                      {editingAssetInventory ? 'Update Asset' : 'Add Asset'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Asset Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Purchase Date</TableHead>
+                <TableHead>Value</TableHead>
+                <TableHead>Condition</TableHead>
+                <TableHead>Last Maintenance</TableHead>
+                <TableHead>Next Maintenance</TableHead>
+                <TableHead>Warranty</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredAssetInventory.map((asset) => (
+                <TableRow key={asset.id}>
+                  <TableCell className="font-medium">{asset.asset_id}</TableCell>
+                  <TableCell>{asset.asset_name}</TableCell>
+                  <TableCell>{asset.category}</TableCell>
+                  <TableCell>{new Date(asset.purchase_date).toLocaleDateString()}</TableCell>
+                  <TableCell>${asset.value.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(asset.condition)}>
+                      {asset.condition}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{asset.last_maintenance ? new Date(asset.last_maintenance).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{asset.next_maintenance ? new Date(asset.next_maintenance).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>
+                    {asset.warranty_month && asset.warranty_year ? (
+                      <span className={isWarrantyActive(asset.warranty_month, asset.warranty_year) ? 'text-green-600' : 'text-red-600'}>
+                        {asset.warranty_month}/{asset.warranty_year}
+                      </span>
+                    ) : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryView(asset)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryEdit(asset)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryDelete(asset.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <Dialog open={isAssetInventoryViewDialogOpen} onOpenChange={setIsAssetInventoryViewDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Asset Details</DialogTitle>
+                <DialogDescription>Complete information for this asset</DialogDescription>
+              </DialogHeader>
+              {viewingAssetInventory && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="font-medium">{viewingAssetInventory.asset_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Asset Name</Label>
+                      <p>{viewingAssetInventory.asset_name}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p>{viewingAssetInventory.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Condition</Label>
+                      <Badge className={getStatusColor(viewingAssetInventory.condition)}>
+                        {viewingAssetInventory.condition}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Purchase Date</Label>
+                      <p>{new Date(viewingAssetInventory.purchase_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Value</Label>
+                      <p>${viewingAssetInventory.value.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Last Maintenance</Label>
+                      <p>{viewingAssetInventory.last_maintenance ? new Date(viewingAssetInventory.last_maintenance).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Next Maintenance</Label>
+                      <p>{viewingAssetInventory.next_maintenance ? new Date(viewingAssetInventory.next_maintenance).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Warranty</Label>
+                    {viewingAssetInventory.warranty_month && viewingAssetInventory.warranty_year ? (
+                      <p className={isWarrantyActive(viewingAssetInventory.warranty_month, viewingAssetInventory.warranty_year) ? 'text-green-600' : 'text-red-600'}>
+                        {viewingAssetInventory.warranty_month}/{viewingAssetInventory.warranty_year} 
+                        {isWarrantyActive(viewingAssetInventory.warranty_month, viewingAssetInventory.warranty_year) ? ' (Active)' : ' (Expired)'}
+                      </p>
+                    ) : <p>No warranty information</p>}
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAssetInventoryViewDialogOpen(false)}>Close</Button>
+                {viewingAssetInventory && (
+                  <Button onClick={() => {
+                    setIsAssetInventoryViewDialogOpen(false);
+                    handleAssetInventoryEdit(viewingAssetInventory);
+                  }}>
+                    Edit Asset
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       );
     }
 

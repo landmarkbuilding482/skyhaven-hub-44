@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_inventory: {
+        Row: {
+          asset_id: string
+          asset_name: string
+          category: string
+          condition: string
+          created_at: string
+          id: string
+          last_maintenance: string | null
+          next_maintenance: string | null
+          purchase_date: string
+          updated_at: string
+          value: number
+          warranty_month: number | null
+          warranty_year: number | null
+        }
+        Insert: {
+          asset_id?: string
+          asset_name: string
+          category: string
+          condition?: string
+          created_at?: string
+          id?: string
+          last_maintenance?: string | null
+          next_maintenance?: string | null
+          purchase_date: string
+          updated_at?: string
+          value?: number
+          warranty_month?: number | null
+          warranty_year?: number | null
+        }
+        Update: {
+          asset_id?: string
+          asset_name?: string
+          category?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          last_maintenance?: string | null
+          next_maintenance?: string | null
+          purchase_date?: string
+          updated_at?: string
+          value?: number
+          warranty_month?: number | null
+          warranty_year?: number | null
+        }
+        Relationships: []
+      }
       feedback_complaints: {
         Row: {
           assigned_to: string | null
