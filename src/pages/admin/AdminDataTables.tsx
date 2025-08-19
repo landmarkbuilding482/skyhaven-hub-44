@@ -164,6 +164,7 @@ const AdminDataTables = () => {
                     <TableHead>Square Meters Available</TableHead>
                     <TableHead>Square Meters Occupied</TableHead>
                     <TableHead>Percentage of Occupancy</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -182,6 +183,16 @@ const AdminDataTables = () => {
                               style={{ width: `${floor.occupancyPercentage}%` }}
                             />
                           </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
