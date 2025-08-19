@@ -81,12 +81,16 @@ const AdminDataTables = () => {
   // State for utilities data
   const [utilitiesData, setUtilitiesData] = useState<Utility[]>([]);
   
+  // State for visitor traffic data
+  const [visitorTrafficData, setVisitorTrafficData] = useState<VisitorTraffic[]>([]);
+  
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
+  const [isVisitorTrafficDialogOpen, setIsVisitorTrafficDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
@@ -153,6 +157,7 @@ const AdminDataTables = () => {
     { value: "occupancy", label: "Occupancy Table" },
     { value: "maintenance", label: "Maintenance & Repairs Table" },
     { value: "utilities", label: "Utilities Table" },
+    { value: "visitor_traffic", label: "Visitor Foot Traffic Table" },
     
     { value: "eventBookings", label: "Event Bookings Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
@@ -248,6 +253,22 @@ const AdminDataTables = () => {
     setUtilitiesData(data || []);
   };
 
+  // Fetch visitor traffic data
+  const fetchVisitorTrafficData = async () => {
+    const { data, error } = await supabase
+      .from('visitor_foot_traffic')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch visitor traffic data');
+      return;
+    }
+    
+    setVisitorTrafficData(data || []);
+  };
+  };
+
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -259,6 +280,8 @@ const AdminDataTables = () => {
       fetchTenantsList();
     } else if (selectedTable === 'utilities') {
       fetchUtilitiesData();
+    } else if (selectedTable === 'visitor_traffic') {
+      fetchVisitorTrafficData();
     }
   }, [selectedTable]);
 
@@ -541,7 +564,93 @@ const AdminDataTables = () => {
     fetchUtilitiesData();
   };
 
-  // Dropdown configuration functions
+  // Visitor Traffic CRUD functions
+  const [visitorTrafficForm, setVisitorTrafficForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: "",
+    floor: "",
+    company: "",
+    purpose: "Work"
+  });
+
+  const handleVisitorTrafficSubmit = async () => {
+    if (editingVisitorTraffic) {
+      // Update existing record
+      const { error } = await supabase
+        .from('visitor_foot_traffic')
+        .update({
+          date: visitorTrafficForm.date,
+          time: visitorTrafficForm.time,
+          floor: visitorTrafficForm.floor,
+          company: visitorTrafficForm.company,
+          purpose: visitorTrafficForm.purpose
+        })
+        .eq('id', editingVisitorTraffic.id);
+      
+      if (error) {
+        toast.error('Failed to update visitor traffic record');
+        return;
+      }
+      
+      toast.success('Visitor traffic record updated successfully');
+    } else {
+      // Create new record
+      const { error } = await supabase
+        .from('visitor_foot_traffic')
+        .insert([{
+          date: visitorTrafficForm.date,
+          time: visitorTrafficForm.time,
+          floor: visitorTrafficForm.floor,
+          company: visitorTrafficForm.company,
+          purpose: visitorTrafficForm.purpose
+        }]);
+      
+      if (error) {
+        toast.error('Failed to create visitor traffic record');
+        return;
+      }
+      
+      toast.success('Visitor traffic record created successfully');
+    }
+    
+    setIsVisitorTrafficDialogOpen(false);
+    setEditingVisitorTraffic(null);
+    setVisitorTrafficForm({
+      date: new Date().toISOString().split('T')[0],
+      time: "",
+      floor: "",
+      company: "",
+      purpose: "Work"
+    });
+    fetchVisitorTrafficData();
+  };
+
+  const handleVisitorTrafficEdit = (traffic: VisitorTraffic) => {
+    setEditingVisitorTraffic(traffic);
+    setVisitorTrafficForm({
+      date: traffic.date,
+      time: traffic.time,
+      floor: traffic.floor,
+      company: traffic.company,
+      purpose: traffic.purpose
+    });
+    setIsVisitorTrafficDialogOpen(true);
+  };
+
+  const handleVisitorTrafficDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('visitor_foot_traffic')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete visitor traffic record');
+      return;
+    }
+    
+    toast.success('Visitor traffic record deleted successfully');
+    fetchVisitorTrafficData();
+  };
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -1630,8 +1739,138 @@ const AdminDataTables = () => {
       );
     }
 
+    if (selectedTable === 'visitor_traffic') {
+      const filteredVisitorTraffic = visitorTrafficData.filter((traffic) =>
+        traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        traffic.date.includes(searchTerm.toLowerCase())
+      );
 
-    if (selectedTable === 'eventBookings') {
+      return (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Visitor Foot Traffic</h2>
+            <Button onClick={() => setIsVisitorTrafficDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Entry
+            </Button>
+          </div>
+          
+          <Dialog open={isVisitorTrafficDialogOpen} onOpenChange={setIsVisitorTrafficDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>{editingVisitorTraffic ? 'Edit' : 'Add'} Visitor Traffic Entry</DialogTitle>
+                <DialogDescription>
+                  {editingVisitorTraffic ? 'Update the visitor traffic record' : 'Create a new visitor traffic record'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="date" className="text-right">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={visitorTrafficForm.date}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, date: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="time" className="text-right">Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={visitorTrafficForm.time}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, time: e.target.value })}
+                    className="col-span-3"
+                    placeholder="HH:MM"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="floor" className="text-right">Floor</Label>
+                  <Input
+                    id="floor"
+                    value={visitorTrafficForm.floor}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, floor: e.target.value })}
+                    className="col-span-3"
+                    placeholder="e.g., 1st Floor"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="company" className="text-right">Company</Label>
+                  <Input
+                    id="company"
+                    value={visitorTrafficForm.company}
+                    onChange={(e) => setVisitorTrafficForm({ ...visitorTrafficForm, company: e.target.value })}
+                    className="col-span-3"
+                    placeholder="Company they came to"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="purpose" className="text-right">Purpose</Label>
+                  <Select value={visitorTrafficForm.purpose} onValueChange={(value) => setVisitorTrafficForm({ ...visitorTrafficForm, purpose: value })}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select purpose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Work">Work</SelectItem>
+                      <SelectItem value="Client">Client</SelectItem>
+                      <SelectItem value="Visitor">Visitor</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsVisitorTrafficDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleVisitorTrafficSubmit}>
+                  {editingVisitorTraffic ? 'Update' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Floor</TableHead>
+                <TableHead>Company</TableHead>
+                <TableHead>Purpose</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredVisitorTraffic.map((traffic) => (
+                <TableRow key={traffic.id}>
+                  <TableCell className="font-medium">{traffic.id}</TableCell>
+                  <TableCell>{new Date(traffic.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{traffic.time}</TableCell>
+                  <TableCell>{traffic.floor}</TableCell>
+                  <TableCell>{traffic.company}</TableCell>
+                  <TableCell>{traffic.purpose}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficEdit(traffic)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleVisitorTrafficDelete(traffic.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
       return (
         <Table>
           <TableHeader>
