@@ -117,7 +117,7 @@ export type Database = {
           created_at: string
           email: string | null
           first_payment_date: string | null
-          floor: string
+          floor: string[]
           id: string
           monthly_rent: number
           name: string
@@ -133,7 +133,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_payment_date?: string | null
-          floor: string
+          floor: string[]
           id?: string
           monthly_rent: number
           name: string
@@ -149,7 +149,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_payment_date?: string | null
-          floor?: string
+          floor?: string[]
           id?: string
           monthly_rent?: number
           name?: string

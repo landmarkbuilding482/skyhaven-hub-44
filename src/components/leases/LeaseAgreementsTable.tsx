@@ -22,7 +22,7 @@ interface LeaseAgreement {
   contract_file_path: string;
   tenants: {
     name: string;
-    floor: string;
+    floor: string[];
     tenant_id: string;
   };
 }
@@ -387,7 +387,15 @@ export const LeaseAgreementsTable = () => {
                     {lease.tenants?.tenant_id || 'N/A'}
                   </TableCell>
                   <TableCell className="font-medium">{lease.tenants?.name}</TableCell>
-                  <TableCell>{lease.tenants?.floor}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {lease.tenants?.floor?.map((f, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          Floor {f}
+                        </Badge>
+                      )) || 'N/A'}
+                    </div>
+                  </TableCell>
                   <TableCell>{format(new Date(lease.lease_start), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>{format(new Date(lease.lease_end), 'MMM dd, yyyy')}</TableCell>
                   <TableCell>${lease.monthly_rent.toLocaleString()}</TableCell>
@@ -467,7 +475,7 @@ export const LeaseAgreementsTable = () => {
                   <option value="">Select Tenant</option>
                   {tenants.map((tenant) => (
                     <option key={tenant.id} value={tenant.id}>
-                      {tenant.tenant_id} - {tenant.name} - Floor {tenant.floor}
+                      {tenant.tenant_id} - {tenant.name} - Floors {tenant.floor?.join(', ')}
                     </option>
                   ))}
                 </select>

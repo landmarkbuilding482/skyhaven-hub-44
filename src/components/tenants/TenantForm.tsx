@@ -11,7 +11,7 @@ interface Tenant {
   id: string;
   tenant_id: string;
   name: string;
-  floor: string;
+  floor: string[];
   space_type: string;
   business_type: string;
   registration_date: string;
@@ -31,7 +31,7 @@ interface TenantFormProps {
 const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
-    floor: '',
+    floor: [] as string[],
     space_type: '',
     business_type: '',
     registration_date: '',
@@ -48,7 +48,7 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
     if (tenant) {
       setFormData({
         name: tenant.name || '',
-        floor: tenant.floor || '',
+        floor: tenant.floor || [],
         space_type: tenant.space_type || '',
         business_type: tenant.business_type || '',
         registration_date: tenant.registration_date || '',
@@ -102,7 +102,8 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
           nextId = lastNumber + 1;
         }
 
-        const floorPrefix = payload.floor === 'G' ? 'G' : payload.floor === 'B' ? 'B' : payload.floor;
+        const firstFloor = payload.floor[0] || '1';
+        const floorPrefix = firstFloor === 'G' ? 'G' : firstFloor === 'B' ? 'B' : firstFloor;
         const tenantId = `LMT-${floorPrefix}${nextId.toString().padStart(3, '0')}`;
 
         // Create new tenant
@@ -131,8 +132,17 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFloorToggle = (floor: string) => {
+    setFormData(prev => ({
+      ...prev,
+      floor: prev.floor.includes(floor)
+        ? prev.floor.filter(f => f !== floor)
+        : [...prev.floor, floor]
+    }));
   };
 
   return (
@@ -157,13 +167,26 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="floor">Floor *</Label>
-              <Input
-                id="floor"
-                value={formData.floor}
-                onChange={(e) => handleChange('floor', e.target.value)}
-                required
-              />
+              <Label>Floors *</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {['8', '7', '6', '5', '4', '3', '2', '1', 'G', 'B'].map((floor) => (
+                  <div key={floor} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`floor-${floor}`}
+                      checked={formData.floor.includes(floor)}
+                      onChange={() => handleFloorToggle(floor)}
+                      className="rounded border-input"
+                    />
+                    <Label htmlFor={`floor-${floor}`} className="text-sm">
+                      {floor === 'G' ? 'Ground' : floor === 'B' ? 'Basement' : `Floor ${floor}`}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {formData.floor.length === 0 && (
+                <p className="text-sm text-destructive">Please select at least one floor</p>
+              )}
             </div>
 
             <div className="space-y-2">

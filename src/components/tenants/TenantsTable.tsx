@@ -14,7 +14,7 @@ interface Tenant {
   id: string;
   tenant_id: string;
   name: string;
-  floor: string;
+  floor: string[];
   space_type: string;
   business_type: string;
   registration_date: string;
@@ -172,7 +172,15 @@ const TenantsTable = () => {
                         {tenant.tenant_id}
                       </TableCell>
                       <TableCell className="font-medium">{tenant.name}</TableCell>
-                      <TableCell>{tenant.floor}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {tenant.floor?.map((f, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              Floor {f}
+                            </Badge>
+                          )) || 'N/A'}
+                        </div>
+                      </TableCell>
                       <TableCell>{tenant.space_type}</TableCell>
                       <TableCell>{tenant.business_type}</TableCell>
                       <TableCell>
