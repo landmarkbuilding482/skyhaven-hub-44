@@ -18,7 +18,6 @@ const AdminDataTables = () => {
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
     { value: "leaseAgreements", label: "Lease Agreements Table" },
     { value: "rentPaymentsLive", label: "Rent Payments (Live)" },
-    { value: "rentPayments", label: "Rent Payments (Mock)" },
     { value: "occupancy", label: "Occupancy Table" },
     { value: "maintenance", label: "Maintenance & Repairs Table" },
     { value: "utilities", label: "Utilities Table" },
@@ -32,11 +31,6 @@ const AdminDataTables = () => {
 
   // Mock data for all tables
   const mockData = {
-    rentPayments: [
-      { id: "P001", tenantId: "T001", paymentDate: "2024-08-01", monthPaidFor: "August 2024", amount: "$5,200", method: "Bank Transfer", status: "Paid", remarks: "On time payment" },
-      { id: "P002", tenantId: "T002", paymentDate: "2024-08-03", monthPaidFor: "August 2024", amount: "$3,800", method: "Check", status: "Paid", remarks: "3 days late" },
-      { id: "P003", tenantId: "T003", paymentDate: "2024-07-28", monthPaidFor: "August 2024", amount: "$6,500", method: "Online Payment", status: "Paid", remarks: "Early payment" },
-    ],
     occupancy: [
       { unitId: "U501", floor: "5", type: "Office", status: "Occupied", tenantId: "T001", dateAvailable: "-" },
       { unitId: "U101", floor: "1", type: "Retail", status: "Occupied", tenantId: "T002", dateAvailable: "-" },
@@ -139,40 +133,6 @@ const AdminDataTables = () => {
     );
 
     switch (selectedTable) {
-
-      case 'rentPayments':
-        return (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Payment ID</TableHead>
-                <TableHead>Tenant ID</TableHead>
-                <TableHead>Payment Date</TableHead>
-                <TableHead>Month Paid For</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Remarks</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.map((payment: any) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-medium">{payment.id}</TableCell>
-                  <TableCell>{payment.tenantId}</TableCell>
-                  <TableCell>{payment.paymentDate}</TableCell>
-                  <TableCell>{payment.monthPaidFor}</TableCell>
-                  <TableCell className="font-medium">{payment.amount}</TableCell>
-                  <TableCell>{payment.method}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(payment.status)}>{payment.status}</Badge>
-                  </TableCell>
-                  <TableCell>{payment.remarks}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        );
 
       case 'occupancy':
         return (
