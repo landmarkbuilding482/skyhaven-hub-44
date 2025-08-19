@@ -23,6 +23,7 @@ export type Database = {
           lease_start: string
           monthly_rent: number
           tenant_id: string
+          tenant_reference: string | null
           terms_summary: string | null
           updated_at: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           lease_start: string
           monthly_rent: number
           tenant_id: string
+          tenant_reference?: string | null
           terms_summary?: string | null
           updated_at?: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           lease_start?: string
           monthly_rent?: number
           tenant_id?: string
+          tenant_reference?: string | null
           terms_summary?: string | null
           updated_at?: string
         }
@@ -68,6 +71,7 @@ export type Database = {
           month_year_range: string
           payment_date: string
           tenant_id: string
+          tenant_reference: string | null
           transaction_id: string
           updated_at: string
         }
@@ -80,6 +84,7 @@ export type Database = {
           month_year_range: string
           payment_date: string
           tenant_id: string
+          tenant_reference?: string | null
           transaction_id: string
           updated_at?: string
         }
@@ -92,6 +97,7 @@ export type Database = {
           month_year_range?: string
           payment_date?: string
           tenant_id?: string
+          tenant_reference?: string | null
           transaction_id?: string
           updated_at?: string
         }
@@ -119,6 +125,7 @@ export type Database = {
           registration_date: string
           space_type: string
           status: string
+          tenant_id: string
           updated_at: string
         }
         Insert: {
@@ -134,6 +141,7 @@ export type Database = {
           registration_date?: string
           space_type: string
           status?: string
+          tenant_id: string
           updated_at?: string
         }
         Update: {
@@ -149,6 +157,7 @@ export type Database = {
           registration_date?: string
           space_type?: string
           status?: string
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: []
