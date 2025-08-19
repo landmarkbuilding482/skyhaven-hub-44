@@ -1746,12 +1746,13 @@ const AdminDataTables = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold">Visitor Foot Traffic</h2>
-            <Button onClick={() => setIsVisitorTrafficDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Entry
-            </Button>
-            
             <Dialog open={isVisitorTrafficDialogOpen} onOpenChange={setIsVisitorTrafficDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Entry
+                </Button>
+              </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                   <DialogTitle>{editingVisitorTraffic ? 'Edit' : 'Add'} Visitor Traffic Entry</DialogTitle>
