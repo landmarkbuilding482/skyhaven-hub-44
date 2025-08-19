@@ -223,14 +223,17 @@ const AdminDataTables = () => {
 
   // Fetch utilities data
   const fetchUtilitiesData = async () => {
-    // Mock data for now - you can replace with actual Supabase call when table is created
-    const mockUtilities: Utility[] = [
-      { id: "1", date: "2024-08-01", type: "Electricity", amount: 2450 },
-      { id: "2", date: "2024-08-01", type: "Water", amount: 890 },
-      { id: "3", date: "2024-08-01", type: "Gas", amount: 320 },
-      { id: "4", date: "2024-08-01", type: "Internet", amount: 450 },
-    ];
-    setUtilitiesData(mockUtilities);
+    const { data, error } = await supabase
+      .from('utilities')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch utilities data');
+      return;
+    }
+    
+    setUtilitiesData(data || []);
   };
 
   useEffect(() => {
@@ -464,18 +467,29 @@ const AdminDataTables = () => {
   // CRUD functions for utilities
   const handleUtilitiesSubmit = async () => {
     if (editingUtility) {
-      // Update existing utility (mock implementation)
-      setUtilitiesData(prev => prev.map(u => 
-        u.id === editingUtility.id ? { ...u, ...utilitiesForm } : u
-      ));
+      // Update existing utility
+      const { error } = await supabase
+        .from('utilities')
+        .update(utilitiesForm)
+        .eq('id', editingUtility.id);
+      
+      if (error) {
+        toast.error('Failed to update utility record');
+        return;
+      }
+      
       toast.success('Utility record updated successfully');
     } else {
-      // Create new utility (mock implementation)
-      const newUtility: Utility = {
-        id: String(Date.now()),
-        ...utilitiesForm
-      };
-      setUtilitiesData(prev => [...prev, newUtility]);
+      // Create new utility
+      const { error } = await supabase
+        .from('utilities')
+        .insert([utilitiesForm]);
+      
+      if (error) {
+        toast.error('Failed to create utility record');
+        return;
+      }
+      
       toast.success('Utility record created successfully');
     }
     
@@ -486,6 +500,7 @@ const AdminDataTables = () => {
       type: "",
       amount: 0
     });
+    fetchUtilitiesData();
   };
 
   const handleUtilitiesEdit = (utility: Utility) => {
@@ -499,8 +514,18 @@ const AdminDataTables = () => {
   };
 
   const handleUtilitiesDelete = async (id: string) => {
-    setUtilitiesData(prev => prev.filter(u => u.id !== id));
+    const { error } = await supabase
+      .from('utilities')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete utility record');
+      return;
+    }
+    
     toast.success('Utility record deleted successfully');
+    fetchUtilitiesData();
   };
 
   // Dropdown configuration functions
