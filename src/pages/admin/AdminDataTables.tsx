@@ -9,7 +9,6 @@ import { Eye, Upload, Edit, Trash2 } from "lucide-react";
 import TenantsTable from "@/components/tenants/TenantsTable";
 import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
 import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
-
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,85 +17,339 @@ const AdminDataTables = () => {
     spotsOccupied: 32,
     occupancyPercentage: 62.7
   });
-
-  const tables = [
-    { value: "tenantsManagement", label: "Tenants Management (Live)" },
-    { value: "leaseAgreements", label: "Lease Agreements Table" },
-    { value: "rentPaymentsLive", label: "Rent Payments (Live)" },
-    { value: "occupancy", label: "Occupancy Table" },
-    { value: "maintenance", label: "Maintenance & Repairs Table" },
-    { value: "utilities", label: "Utilities Table" },
-    { value: "visitorTraffic", label: "Visitor Foot Traffic Table" },
-    { value: "eventBookings", label: "Event Bookings Table" },
-    { value: "feedback", label: "Feedback & Complaints Table" },
-    { value: "cleaningSecurity", label: "Cleaning & Security Logs" },
-    { value: "revenue", label: "Revenue & Expenses Table" },
-    { value: "assets", label: "Asset Inventory Table" },
-  ];
+  const tables = [{
+    value: "tenantsManagement",
+    label: "Tenants Management (Live)"
+  }, {
+    value: "leaseAgreements",
+    label: "Lease Agreements Table"
+  }, {
+    value: "rentPaymentsLive",
+    label: "Rent Payments (Live)"
+  }, {
+    value: "occupancy",
+    label: "Occupancy Table"
+  }, {
+    value: "maintenance",
+    label: "Maintenance & Repairs Table"
+  }, {
+    value: "utilities",
+    label: "Utilities Table"
+  }, {
+    value: "visitorTraffic",
+    label: "Visitor Foot Traffic Table"
+  }, {
+    value: "eventBookings",
+    label: "Event Bookings Table"
+  }, {
+    value: "feedback",
+    label: "Feedback & Complaints Table"
+  }, {
+    value: "cleaningSecurity",
+    label: "Cleaning & Security Logs"
+  }, {
+    value: "revenue",
+    label: "Revenue & Expenses Table"
+  }, {
+    value: "assets",
+    label: "Asset Inventory Table"
+  }];
 
   // Mock data for all tables
   const mockData = {
-    occupancy: [
-      { floor: "8", type: "Office", sqmAvailable: 1200, sqmOccupied: 800, occupancyPercentage: 66.7 },
-      { floor: "7", type: "Office", sqmAvailable: 1200, sqmOccupied: 1200, occupancyPercentage: 100 },
-      { floor: "6", type: "Office", sqmAvailable: 1200, sqmOccupied: 900, occupancyPercentage: 75 },
-      { floor: "5", type: "Office", sqmAvailable: 1200, sqmOccupied: 1100, occupancyPercentage: 91.7 },
-      { floor: "4", type: "Office", sqmAvailable: 1200, sqmOccupied: 600, occupancyPercentage: 50 },
-      { floor: "3", type: "Office", sqmAvailable: 1200, sqmOccupied: 1000, occupancyPercentage: 83.3 },
-      { floor: "2", type: "Office", sqmAvailable: 1200, sqmOccupied: 700, occupancyPercentage: 58.3 },
-      { floor: "1", type: "Retail", sqmAvailable: 800, sqmOccupied: 800, occupancyPercentage: 100 },
-      { floor: "G", type: "Retail", sqmAvailable: 600, sqmOccupied: 450, occupancyPercentage: 75 },
-    ],
-    bFloorCompanies: [
-      { company: "TechCorp Solutions", spotsAllowed: 15 },
-      { company: "Marketing Plus", spotsAllowed: 8 },
-      { company: "Legal Associates", spotsAllowed: 12 },
-      { company: "Design Studio", spotsAllowed: 6 },
-      { company: "Consultancy Group", spotsAllowed: 10 },
-    ],
-    maintenance: [
-      { id: "M001", dateReported: "2024-08-05", floor: "5", issueType: "HVAC", description: "Air conditioning not cooling properly", assignedVendor: "Cool Air Systems", cost: "$850", status: "In Progress", completionDate: "-" },
-      { id: "M002", dateReported: "2024-07-15", floor: "1", issueType: "Electrical", description: "Lighting fixture replacement", assignedVendor: "Bright Electric", cost: "$320", status: "Completed", completionDate: "2024-07-17" },
-      { id: "M003", dateReported: "2024-08-01", floor: "8", issueType: "Plumbing", description: "Leaky faucet in restroom", assignedVendor: "Quick Fix Plumbing", cost: "$150", status: "Completed", completionDate: "2024-08-02" },
-    ],
-    utilities: [
-      { id: "U001", date: "2024-08-01", floor: "5", utilityType: "Electricity", usage: "2,450 kWh", cost: "$490", billedTo: "Landlord" },
-      { id: "U002", date: "2024-08-01", floor: "1", utilityType: "Water", usage: "850 gallons", cost: "$145", billedTo: "Tenant" },
-      { id: "U003", date: "2024-08-01", floor: "8", utilityType: "Internet", usage: "Unlimited", cost: "$120", billedTo: "Landlord" },
-    ],
-    visitorTraffic: [
-      { id: "V001", date: "2024-08-07", area: "Ground Floor", entryTime: "09:00", exitTime: "17:30", count: "45", specialEvent: "No" },
-      { id: "V002", date: "2024-08-06", area: "Rooftop", entryTime: "18:00", exitTime: "23:00", count: "120", specialEvent: "Yes" },
-      { id: "V003", date: "2024-08-05", area: "Ground Floor", entryTime: "08:30", exitTime: "18:00", count: "38", specialEvent: "No" },
-    ],
-    eventBookings: [
-      { id: "E001", clientName: "Johnson & Associates", eventType: "Corporate Meeting", bookingDate: "2024-08-01", eventDate: "2024-08-20", timeSlot: "2:00 PM - 6:00 PM", rentalFee: "$800", extras: "Catering, AV Equipment", paymentStatus: "Paid" },
-      { id: "E002", clientName: "Sarah Miller", eventType: "Wedding Reception", bookingDate: "2024-07-15", eventDate: "2024-09-15", timeSlot: "6:00 PM - 12:00 AM", rentalFee: "$2,500", extras: "Decorations, DJ", paymentStatus: "Partial" },
-    ],
-    feedback: [
-      { id: "F001", source: "Tenant", date: "2024-08-01", floor: "5", feedbackType: "Suggestion", description: "Request for additional parking spaces", actionTaken: "Under review by management", status: "Open" },
-      { id: "F002", source: "Visitor", date: "2024-07-28", floor: "1", feedbackType: "Complaint", description: "Difficulty finding parking", actionTaken: "Installed better signage", status: "Resolved" },
-      { id: "F003", source: "Tenant", date: "2024-07-20", floor: "8", feedbackType: "Compliment", description: "Excellent maintenance response time", actionTaken: "Shared with maintenance team", status: "Closed" },
-    ],
-    cleaningSecurity: [
-      { id: "CS001", date: "2024-08-07", floor: "5", activityType: "Cleaning", time: "20:00", staffName: "Maria Santos", notes: "Deep cleaned office suite 501" },
-      { id: "CS002", date: "2024-08-07", floor: "All", activityType: "Security", time: "22:00", staffName: "David Chen", notes: "Security round - all clear" },
-      { id: "CS003", date: "2024-08-06", floor: "1", activityType: "Cleaning", time: "19:30", staffName: "Carlos Rodriguez", notes: "Retail area maintenance cleaning" },
-    ],
-    revenue: [
-      { id: "R001", date: "2024-08-01", source: "Rent", category: "Office Rent", amount: "$15,700", type: "Revenue", notes: "Monthly rent collection" },
-      { id: "R002", date: "2024-08-01", source: "Event", category: "Rooftop Rental", amount: "$800", type: "Revenue", notes: "Corporate event booking" },
-      { id: "R003", date: "2024-08-02", source: "Maintenance", category: "HVAC Repair", amount: "$850", type: "Expense", notes: "AC repair on floor 5" },
-      { id: "R004", date: "2024-08-03", source: "Utilities", category: "Electricity", amount: "$1,200", type: "Expense", notes: "Monthly electricity bill" },
-    ],
-    assets: [
-      { id: "A001", name: "Elevator System - Main", location: "Central Core", purchaseDate: "2020-01-15", cost: "$45,000", condition: "Good", maintenanceSchedule: "Quarterly" },
-      { id: "A002", name: "HVAC Unit - Floor 5", location: "Floor 5 - Mechanical Room", purchaseDate: "2021-03-10", cost: "$12,000", condition: "Excellent", maintenanceSchedule: "Bi-annually" },
-      { id: "A003", name: "Security Camera System", location: "Building-wide", purchaseDate: "2022-06-20", cost: "$8,500", condition: "Excellent", maintenanceSchedule: "Annually" },
-      { id: "A004", name: "Conference Room Furniture", location: "Floor 8 - Suite 801", purchaseDate: "2023-01-05", cost: "$3,200", condition: "Good", maintenanceSchedule: "As needed" },
-    ],
+    occupancy: [{
+      floor: "8",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 800,
+      occupancyPercentage: 66.7
+    }, {
+      floor: "7",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 1200,
+      occupancyPercentage: 100
+    }, {
+      floor: "6",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 900,
+      occupancyPercentage: 75
+    }, {
+      floor: "5",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 1100,
+      occupancyPercentage: 91.7
+    }, {
+      floor: "4",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 600,
+      occupancyPercentage: 50
+    }, {
+      floor: "3",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 1000,
+      occupancyPercentage: 83.3
+    }, {
+      floor: "2",
+      type: "Office",
+      sqmAvailable: 1200,
+      sqmOccupied: 700,
+      occupancyPercentage: 58.3
+    }, {
+      floor: "1",
+      type: "Retail",
+      sqmAvailable: 800,
+      sqmOccupied: 800,
+      occupancyPercentage: 100
+    }, {
+      floor: "G",
+      type: "Retail",
+      sqmAvailable: 600,
+      sqmOccupied: 450,
+      occupancyPercentage: 75
+    }],
+    bFloorCompanies: [{
+      company: "TechCorp Solutions",
+      spotsAllowed: 15
+    }, {
+      company: "Marketing Plus",
+      spotsAllowed: 8
+    }, {
+      company: "Legal Associates",
+      spotsAllowed: 12
+    }, {
+      company: "Design Studio",
+      spotsAllowed: 6
+    }, {
+      company: "Consultancy Group",
+      spotsAllowed: 10
+    }],
+    maintenance: [{
+      id: "M001",
+      dateReported: "2024-08-05",
+      floor: "5",
+      issueType: "HVAC",
+      description: "Air conditioning not cooling properly",
+      assignedVendor: "Cool Air Systems",
+      cost: "$850",
+      status: "In Progress",
+      completionDate: "-"
+    }, {
+      id: "M002",
+      dateReported: "2024-07-15",
+      floor: "1",
+      issueType: "Electrical",
+      description: "Lighting fixture replacement",
+      assignedVendor: "Bright Electric",
+      cost: "$320",
+      status: "Completed",
+      completionDate: "2024-07-17"
+    }, {
+      id: "M003",
+      dateReported: "2024-08-01",
+      floor: "8",
+      issueType: "Plumbing",
+      description: "Leaky faucet in restroom",
+      assignedVendor: "Quick Fix Plumbing",
+      cost: "$150",
+      status: "Completed",
+      completionDate: "2024-08-02"
+    }],
+    utilities: [{
+      id: "U001",
+      date: "2024-08-01",
+      floor: "5",
+      utilityType: "Electricity",
+      usage: "2,450 kWh",
+      cost: "$490",
+      billedTo: "Landlord"
+    }, {
+      id: "U002",
+      date: "2024-08-01",
+      floor: "1",
+      utilityType: "Water",
+      usage: "850 gallons",
+      cost: "$145",
+      billedTo: "Tenant"
+    }, {
+      id: "U003",
+      date: "2024-08-01",
+      floor: "8",
+      utilityType: "Internet",
+      usage: "Unlimited",
+      cost: "$120",
+      billedTo: "Landlord"
+    }],
+    visitorTraffic: [{
+      id: "V001",
+      date: "2024-08-07",
+      area: "Ground Floor",
+      entryTime: "09:00",
+      exitTime: "17:30",
+      count: "45",
+      specialEvent: "No"
+    }, {
+      id: "V002",
+      date: "2024-08-06",
+      area: "Rooftop",
+      entryTime: "18:00",
+      exitTime: "23:00",
+      count: "120",
+      specialEvent: "Yes"
+    }, {
+      id: "V003",
+      date: "2024-08-05",
+      area: "Ground Floor",
+      entryTime: "08:30",
+      exitTime: "18:00",
+      count: "38",
+      specialEvent: "No"
+    }],
+    eventBookings: [{
+      id: "E001",
+      clientName: "Johnson & Associates",
+      eventType: "Corporate Meeting",
+      bookingDate: "2024-08-01",
+      eventDate: "2024-08-20",
+      timeSlot: "2:00 PM - 6:00 PM",
+      rentalFee: "$800",
+      extras: "Catering, AV Equipment",
+      paymentStatus: "Paid"
+    }, {
+      id: "E002",
+      clientName: "Sarah Miller",
+      eventType: "Wedding Reception",
+      bookingDate: "2024-07-15",
+      eventDate: "2024-09-15",
+      timeSlot: "6:00 PM - 12:00 AM",
+      rentalFee: "$2,500",
+      extras: "Decorations, DJ",
+      paymentStatus: "Partial"
+    }],
+    feedback: [{
+      id: "F001",
+      source: "Tenant",
+      date: "2024-08-01",
+      floor: "5",
+      feedbackType: "Suggestion",
+      description: "Request for additional parking spaces",
+      actionTaken: "Under review by management",
+      status: "Open"
+    }, {
+      id: "F002",
+      source: "Visitor",
+      date: "2024-07-28",
+      floor: "1",
+      feedbackType: "Complaint",
+      description: "Difficulty finding parking",
+      actionTaken: "Installed better signage",
+      status: "Resolved"
+    }, {
+      id: "F003",
+      source: "Tenant",
+      date: "2024-07-20",
+      floor: "8",
+      feedbackType: "Compliment",
+      description: "Excellent maintenance response time",
+      actionTaken: "Shared with maintenance team",
+      status: "Closed"
+    }],
+    cleaningSecurity: [{
+      id: "CS001",
+      date: "2024-08-07",
+      floor: "5",
+      activityType: "Cleaning",
+      time: "20:00",
+      staffName: "Maria Santos",
+      notes: "Deep cleaned office suite 501"
+    }, {
+      id: "CS002",
+      date: "2024-08-07",
+      floor: "All",
+      activityType: "Security",
+      time: "22:00",
+      staffName: "David Chen",
+      notes: "Security round - all clear"
+    }, {
+      id: "CS003",
+      date: "2024-08-06",
+      floor: "1",
+      activityType: "Cleaning",
+      time: "19:30",
+      staffName: "Carlos Rodriguez",
+      notes: "Retail area maintenance cleaning"
+    }],
+    revenue: [{
+      id: "R001",
+      date: "2024-08-01",
+      source: "Rent",
+      category: "Office Rent",
+      amount: "$15,700",
+      type: "Revenue",
+      notes: "Monthly rent collection"
+    }, {
+      id: "R002",
+      date: "2024-08-01",
+      source: "Event",
+      category: "Rooftop Rental",
+      amount: "$800",
+      type: "Revenue",
+      notes: "Corporate event booking"
+    }, {
+      id: "R003",
+      date: "2024-08-02",
+      source: "Maintenance",
+      category: "HVAC Repair",
+      amount: "$850",
+      type: "Expense",
+      notes: "AC repair on floor 5"
+    }, {
+      id: "R004",
+      date: "2024-08-03",
+      source: "Utilities",
+      category: "Electricity",
+      amount: "$1,200",
+      type: "Expense",
+      notes: "Monthly electricity bill"
+    }],
+    assets: [{
+      id: "A001",
+      name: "Elevator System - Main",
+      location: "Central Core",
+      purchaseDate: "2020-01-15",
+      cost: "$45,000",
+      condition: "Good",
+      maintenanceSchedule: "Quarterly"
+    }, {
+      id: "A002",
+      name: "HVAC Unit - Floor 5",
+      location: "Floor 5 - Mechanical Room",
+      purchaseDate: "2021-03-10",
+      cost: "$12,000",
+      condition: "Excellent",
+      maintenanceSchedule: "Bi-annually"
+    }, {
+      id: "A003",
+      name: "Security Camera System",
+      location: "Building-wide",
+      purchaseDate: "2022-06-20",
+      cost: "$8,500",
+      condition: "Excellent",
+      maintenanceSchedule: "Annually"
+    }, {
+      id: "A004",
+      name: "Conference Room Furniture",
+      location: "Floor 8 - Suite 801",
+      purchaseDate: "2023-01-05",
+      cost: "$3,200",
+      condition: "Good",
+      maintenanceSchedule: "As needed"
+    }]
   };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'active':
@@ -122,7 +375,6 @@ const AdminDataTables = () => {
         return 'bg-muted text-muted-foreground';
     }
   };
-
   const renderTable = () => {
     if (!selectedTable) return null;
 
@@ -130,29 +382,18 @@ const AdminDataTables = () => {
     if (selectedTable === 'tenantsManagement') {
       return <TenantsTable />;
     }
-    
     if (selectedTable === 'leaseAgreements') {
       return <LeaseAgreementsTable />;
     }
-
     if (selectedTable === 'rentPaymentsLive') {
       return <RentPaymentsTable />;
     }
-
     const data = mockData[selectedTable as keyof typeof mockData];
     if (!data) return null;
-    
-    const filteredData = data.filter((item: any) => 
-      Object.values(item).some(value => 
-        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-
+    const filteredData = data.filter((item: any) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase())));
     switch (selectedTable) {
-
       case 'occupancy':
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             {/* Main Occupancy Table for Floors 8-G */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Floor Occupancy (Floors 8-G)</h3>
@@ -168,8 +409,7 @@ const AdminDataTables = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.map((floor: any) => (
-                    <TableRow key={floor.floor}>
+                  {filteredData.map((floor: any) => <TableRow key={floor.floor}>
                       <TableCell className="font-medium">{floor.floor}</TableCell>
                       <TableCell>{floor.type}</TableCell>
                       <TableCell>{floor.sqmAvailable.toLocaleString()} m²</TableCell>
@@ -178,10 +418,9 @@ const AdminDataTables = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{floor.occupancyPercentage}%</span>
                           <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full transition-all"
-                              style={{ width: `${floor.occupancyPercentage}%` }}
-                            />
+                            <div className="h-full bg-primary rounded-full transition-all" style={{
+                          width: `${floor.occupancyPercentage}%`
+                        }} />
                           </div>
                         </div>
                       </TableCell>
@@ -195,8 +434,7 @@ const AdminDataTables = () => {
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
               </Table>
             </div>
@@ -218,8 +456,7 @@ const AdminDataTables = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockData.bFloorCompanies.map((company: any, index: number) => (
-                    <TableRow key={index}>
+                  {mockData.bFloorCompanies.map((company: any, index: number) => <TableRow key={index}>
                       <TableCell className="font-medium">{company.company}</TableCell>
                       <TableCell>{company.spotsAllowed}</TableCell>
                       <TableCell>
@@ -232,8 +469,7 @@ const AdminDataTables = () => {
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
               </Table>
             </div>
@@ -246,12 +482,10 @@ const AdminDataTables = () => {
                   <CardContent className="p-4">
                     <div className="text-sm text-muted-foreground">Spots Available</div>
                     <div className="text-2xl font-bold text-primary">
-                      <Input 
-                        type="number" 
-                        value={bFloorStats.spotsAvailable}
-                        onChange={(e) => setBFloorStats({...bFloorStats, spotsAvailable: parseInt(e.target.value) || 0})}
-                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent"
-                      />
+                      <Input type="number" value={bFloorStats.spotsAvailable} onChange={e => setBFloorStats({
+                      ...bFloorStats,
+                      spotsAvailable: parseInt(e.target.value) || 0
+                    })} className="text-2xl font-bold border-none p-0 h-auto bg-transparent" />
                     </div>
                   </CardContent>
                 </Card>
@@ -259,12 +493,10 @@ const AdminDataTables = () => {
                   <CardContent className="p-4">
                     <div className="text-sm text-muted-foreground">Spots Occupied</div>
                     <div className="text-2xl font-bold text-secondary">
-                      <Input 
-                        type="number" 
-                        value={bFloorStats.spotsOccupied}
-                        onChange={(e) => setBFloorStats({...bFloorStats, spotsOccupied: parseInt(e.target.value) || 0})}
-                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent"
-                      />
+                      <Input type="number" value={bFloorStats.spotsOccupied} onChange={e => setBFloorStats({
+                      ...bFloorStats,
+                      spotsOccupied: parseInt(e.target.value) || 0
+                    })} className="text-2xl font-bold border-none p-0 h-auto bg-green-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -272,24 +504,20 @@ const AdminDataTables = () => {
                   <CardContent className="p-4">
                     <div className="text-sm text-muted-foreground">Percentage of Occupancy</div>
                     <div className="text-2xl font-bold flex items-center gap-2">
-                      <span>{((bFloorStats.spotsOccupied / bFloorStats.spotsAvailable) * 100).toFixed(1)}%</span>
+                      <span>{(bFloorStats.spotsOccupied / bFloorStats.spotsAvailable * 100).toFixed(1)}%</span>
                       <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${(bFloorStats.spotsOccupied / bFloorStats.spotsAvailable) * 100}%` }}
-                        />
+                        <div className="h-full bg-primary rounded-full transition-all" style={{
+                        width: `${bFloorStats.spotsOccupied / bFloorStats.spotsAvailable * 100}%`
+                      }} />
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
-          </div>
-        );
-
+          </div>;
       case 'maintenance':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Issue ID</TableHead>
@@ -304,8 +532,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((issue: any) => (
-                <TableRow key={issue.id}>
+              {filteredData.map((issue: any) => <TableRow key={issue.id}>
                   <TableCell className="font-medium">{issue.id}</TableCell>
                   <TableCell>{issue.dateReported}</TableCell>
                   <TableCell>{issue.floor}</TableCell>
@@ -317,15 +544,11 @@ const AdminDataTables = () => {
                     <Badge className={getStatusColor(issue.status)}>{issue.status}</Badge>
                   </TableCell>
                   <TableCell>{issue.completionDate}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'utilities':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Record ID</TableHead>
@@ -338,8 +561,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((utility: any) => (
-                <TableRow key={utility.id}>
+              {filteredData.map((utility: any) => <TableRow key={utility.id}>
                   <TableCell className="font-medium">{utility.id}</TableCell>
                   <TableCell>{utility.date}</TableCell>
                   <TableCell>{utility.floor}</TableCell>
@@ -347,15 +569,11 @@ const AdminDataTables = () => {
                   <TableCell>{utility.usage}</TableCell>
                   <TableCell className="font-medium">{utility.cost}</TableCell>
                   <TableCell>{utility.billedTo}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'visitorTraffic':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Entry ID</TableHead>
@@ -368,8 +586,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((visitor: any) => (
-                <TableRow key={visitor.id}>
+              {filteredData.map((visitor: any) => <TableRow key={visitor.id}>
                   <TableCell className="font-medium">{visitor.id}</TableCell>
                   <TableCell>{visitor.date}</TableCell>
                   <TableCell>{visitor.area}</TableCell>
@@ -377,15 +594,11 @@ const AdminDataTables = () => {
                   <TableCell>{visitor.exitTime}</TableCell>
                   <TableCell className="font-medium">{visitor.count}</TableCell>
                   <TableCell>{visitor.specialEvent}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'eventBookings':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Event ID</TableHead>
@@ -400,8 +613,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((event: any) => (
-                <TableRow key={event.id}>
+              {filteredData.map((event: any) => <TableRow key={event.id}>
                   <TableCell className="font-medium">{event.id}</TableCell>
                   <TableCell>{event.clientName}</TableCell>
                   <TableCell>{event.eventType}</TableCell>
@@ -413,15 +625,11 @@ const AdminDataTables = () => {
                   <TableCell>
                     <Badge className={getStatusColor(event.paymentStatus)}>{event.paymentStatus}</Badge>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'feedback':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Feedback ID</TableHead>
@@ -435,8 +643,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((feedback: any) => (
-                <TableRow key={feedback.id}>
+              {filteredData.map((feedback: any) => <TableRow key={feedback.id}>
                   <TableCell className="font-medium">{feedback.id}</TableCell>
                   <TableCell>{feedback.source}</TableCell>
                   <TableCell>{feedback.date}</TableCell>
@@ -447,15 +654,11 @@ const AdminDataTables = () => {
                   <TableCell>
                     <Badge className={getStatusColor(feedback.status)}>{feedback.status}</Badge>
                   </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'cleaningSecurity':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Record ID</TableHead>
@@ -468,8 +671,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((log: any) => (
-                <TableRow key={log.id}>
+              {filteredData.map((log: any) => <TableRow key={log.id}>
                   <TableCell className="font-medium">{log.id}</TableCell>
                   <TableCell>{log.date}</TableCell>
                   <TableCell>{log.floor}</TableCell>
@@ -477,15 +679,11 @@ const AdminDataTables = () => {
                   <TableCell>{log.time}</TableCell>
                   <TableCell>{log.staffName}</TableCell>
                   <TableCell className="max-w-xs truncate" title={log.notes}>{log.notes}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'revenue':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Record ID</TableHead>
@@ -498,8 +696,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((record: any) => (
-                <TableRow key={record.id}>
+              {filteredData.map((record: any) => <TableRow key={record.id}>
                   <TableCell className="font-medium">{record.id}</TableCell>
                   <TableCell>{record.date}</TableCell>
                   <TableCell>{record.source}</TableCell>
@@ -513,15 +710,11 @@ const AdminDataTables = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>{record.notes}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       case 'assets':
-        return (
-          <Table>
+        return <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Asset ID</TableHead>
@@ -534,8 +727,7 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredData.map((asset: any) => (
-                <TableRow key={asset.id}>
+              {filteredData.map((asset: any) => <TableRow key={asset.id}>
                   <TableCell className="font-medium">{asset.id}</TableCell>
                   <TableCell>{asset.name}</TableCell>
                   <TableCell>{asset.location}</TableCell>
@@ -545,19 +737,14 @@ const AdminDataTables = () => {
                     <Badge className={getStatusColor(asset.condition)}>{asset.condition}</Badge>
                   </TableCell>
                   <TableCell>{asset.maintenanceSchedule}</TableCell>
-                </TableRow>
-              ))}
+                </TableRow>)}
             </TableBody>
-          </Table>
-        );
-
+          </Table>;
       default:
         return null;
     }
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Data Tables</CardTitle>
@@ -572,28 +759,18 @@ const AdminDataTables = () => {
                 <SelectValue placeholder="Select a table to view" />
               </SelectTrigger>
               <SelectContent>
-                {tables.map((table) => (
-                  <SelectItem key={table.value} value={table.value}>
+                {tables.map(table => <SelectItem key={table.value} value={table.value}>
                     {table.label}
-                  </SelectItem>
-                ))}
+                  </SelectItem>)}
               </SelectContent>
             </Select>
             
-            {selectedTable && (
-              <Input
-                placeholder="Search table data..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="sm:w-[300px]"
-              />
-            )}
+            {selectedTable && <Input placeholder="Search table data..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="sm:w-[300px]" />}
           </div>
         </CardContent>
       </Card>
 
-      {selectedTable && (
-        <Card>
+      {selectedTable && <Card>
           <CardHeader>
             <CardTitle>
               {tables.find(table => table.value === selectedTable)?.label}
@@ -607,10 +784,7 @@ const AdminDataTables = () => {
               {renderTable()}
             </div>
           </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        </Card>}
+    </div>;
 };
-
 export default AdminDataTables;
