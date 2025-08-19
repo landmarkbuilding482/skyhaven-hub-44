@@ -315,6 +315,39 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_foot_traffic: {
+        Row: {
+          company: string
+          created_at: string
+          date: string
+          floor: string
+          id: string
+          purpose: string
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          date: string
+          floor: string
+          id?: string
+          purpose: string
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          date?: string
+          floor?: string
+          id?: string
+          purpose?: string
+          time?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
