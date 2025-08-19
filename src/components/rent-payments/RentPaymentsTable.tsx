@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,10 +26,31 @@ interface Tenant {
   name: string;
 }
 
+interface PaymentFormData {
+  transaction_id: string;
+  tenant_id: string;
+  payment_date: string;
+  month_year_range: string;
+  amount: number;
+  method: string;
+  last_paid_rent_date: string;
+}
+
 const RentPaymentsTable = () => {
   const [rentPayments, setRentPayments] = useState<RentPayment[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<RentPayment | null>(null);
+  const [formData, setFormData] = useState<PaymentFormData>({
+    transaction_id: "",
+    tenant_id: "",
+    payment_date: "",
+    month_year_range: "",
+    amount: 0,
+    method: "",
+    last_paid_rent_date: ""
+  });
   const { toast } = useToast();
 
   const fetchRentPayments = async () => {
@@ -102,6 +126,95 @@ const RentPaymentsTable = () => {
     }
   };
 
+  const handleEdit = (payment: RentPayment) => {
+    setEditingPayment(payment);
+    setFormData({
+      transaction_id: payment.transaction_id,
+      tenant_id: payment.tenant_id,
+      payment_date: payment.payment_date,
+      month_year_range: payment.month_year_range,
+      amount: payment.amount,
+      method: payment.method,
+      last_paid_rent_date: payment.last_paid_rent_date || ""
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment record?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('rent_payments')
+        .delete()
+        .eq('id', paymentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Payment record deleted successfully",
+      });
+      fetchRentPayments();
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete payment record",
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingPayment) {
+        const { error } = await supabase
+          .from('rent_payments')
+          .update(formData)
+          .eq('id', editingPayment.id);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Payment record updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('rent_payments')
+          .insert([formData]);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Payment record created successfully",
+        });
+      }
+
+      setShowForm(false);
+      setEditingPayment(null);
+      setFormData({
+        transaction_id: "",
+        tenant_id: "",
+        payment_date: "",
+        month_year_range: "",
+        amount: 0,
+        method: "",
+        last_paid_rent_date: ""
+      });
+      fetchRentPayments();
+    } catch (error) {
+      console.error('Error saving payment:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to save payment record",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -125,7 +238,7 @@ const RentPaymentsTable = () => {
                 Track and manage all rent payment transactions
               </CardDescription>
             </div>
-            <Button>
+            <Button onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Payment
             </Button>
@@ -184,10 +297,18 @@ const RentPaymentsTable = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(payment)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDelete(payment.id)}
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -200,6 +321,115 @@ const RentPaymentsTable = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingPayment ? 'Edit Payment Record' : 'Add New Payment Record'}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="transaction_id">Transaction ID</Label>
+              <Input
+                id="transaction_id"
+                value={formData.transaction_id}
+                onChange={(e) => setFormData({ ...formData, transaction_id: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="tenant_id">Tenant</Label>
+              <select
+                id="tenant_id"
+                className="w-full p-2 border rounded-md"
+                value={formData.tenant_id}
+                onChange={(e) => setFormData({ ...formData, tenant_id: e.target.value })}
+                required
+              >
+                <option value="">Select Tenant</option>
+                {tenants.map((tenant) => (
+                  <option key={tenant.id} value={tenant.id}>
+                    {tenant.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="payment_date">Payment Date</Label>
+              <Input
+                id="payment_date"
+                type="date"
+                value={formData.payment_date}
+                onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="month_year_range">Month/Year Range</Label>
+              <Input
+                id="month_year_range"
+                placeholder="e.g., August 2024 - August 2025"
+                value={formData.month_year_range}
+                onChange={(e) => setFormData({ ...formData, month_year_range: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="amount">Amount ($)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="method">Payment Method</Label>
+              <select
+                id="method"
+                className="w-full p-2 border rounded-md"
+                value={formData.method}
+                onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                required
+              >
+                <option value="">Select Method</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="card">Card</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="last_paid_rent_date">Last Paid Rent Date</Label>
+              <Input
+                id="last_paid_rent_date"
+                type="date"
+                value={formData.last_paid_rent_date}
+                onChange={(e) => setFormData({ ...formData, last_paid_rent_date: e.target.value })}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingPayment(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {editingPayment ? 'Update Payment' : 'Add Payment'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
