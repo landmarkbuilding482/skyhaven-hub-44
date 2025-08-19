@@ -13,6 +13,11 @@ import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [bFloorStats, setBFloorStats] = useState({
+    spotsAvailable: 51,
+    spotsOccupied: 32,
+    occupancyPercentage: 62.7
+  });
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -32,11 +37,22 @@ const AdminDataTables = () => {
   // Mock data for all tables
   const mockData = {
     occupancy: [
-      { unitId: "U501", floor: "5", type: "Office", status: "Occupied", tenantId: "T001", dateAvailable: "-" },
-      { unitId: "U101", floor: "1", type: "Retail", status: "Occupied", tenantId: "T002", dateAvailable: "-" },
-      { unitId: "U801", floor: "8", type: "Office", status: "Occupied", tenantId: "T003", dateAvailable: "-" },
-      { unitId: "U502", floor: "5", type: "Office", status: "Vacant", tenantId: "-", dateAvailable: "2024-09-01" },
-      { unitId: "U601", floor: "6", type: "Office", status: "Vacant", tenantId: "-", dateAvailable: "2024-08-15" },
+      { floor: "8", type: "Office", sqmAvailable: 1200, sqmOccupied: 800, occupancyPercentage: 66.7 },
+      { floor: "7", type: "Office", sqmAvailable: 1200, sqmOccupied: 1200, occupancyPercentage: 100 },
+      { floor: "6", type: "Office", sqmAvailable: 1200, sqmOccupied: 900, occupancyPercentage: 75 },
+      { floor: "5", type: "Office", sqmAvailable: 1200, sqmOccupied: 1100, occupancyPercentage: 91.7 },
+      { floor: "4", type: "Office", sqmAvailable: 1200, sqmOccupied: 600, occupancyPercentage: 50 },
+      { floor: "3", type: "Office", sqmAvailable: 1200, sqmOccupied: 1000, occupancyPercentage: 83.3 },
+      { floor: "2", type: "Office", sqmAvailable: 1200, sqmOccupied: 700, occupancyPercentage: 58.3 },
+      { floor: "1", type: "Retail", sqmAvailable: 800, sqmOccupied: 800, occupancyPercentage: 100 },
+      { floor: "G", type: "Retail", sqmAvailable: 600, sqmOccupied: 450, occupancyPercentage: 75 },
+    ],
+    bFloorCompanies: [
+      { company: "TechCorp Solutions", spotsAllowed: 15 },
+      { company: "Marketing Plus", spotsAllowed: 8 },
+      { company: "Legal Associates", spotsAllowed: 12 },
+      { company: "Design Studio", spotsAllowed: 6 },
+      { company: "Consultancy Group", spotsAllowed: 10 },
     ],
     maintenance: [
       { id: "M001", dateReported: "2024-08-05", floor: "5", issueType: "HVAC", description: "Air conditioning not cooling properly", assignedVendor: "Cool Air Systems", cost: "$850", status: "In Progress", completionDate: "-" },
@@ -136,32 +152,118 @@ const AdminDataTables = () => {
 
       case 'occupancy':
         return (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unit ID</TableHead>
-                <TableHead>Floor</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tenant ID</TableHead>
-                <TableHead>Date Available</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredData.map((unit: any) => (
-                <TableRow key={unit.unitId}>
-                  <TableCell className="font-medium">{unit.unitId}</TableCell>
-                  <TableCell>{unit.floor}</TableCell>
-                  <TableCell>{unit.type}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(unit.status)}>{unit.status}</Badge>
-                  </TableCell>
-                  <TableCell>{unit.tenantId}</TableCell>
-                  <TableCell>{unit.dateAvailable}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="space-y-6">
+            {/* Main Occupancy Table for Floors 8-G */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Floor Occupancy (Floors 8-G)</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Floor</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Square Meters Available</TableHead>
+                    <TableHead>Square Meters Occupied</TableHead>
+                    <TableHead>Percentage of Occupancy</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((floor: any) => (
+                    <TableRow key={floor.floor}>
+                      <TableCell className="font-medium">{floor.floor}</TableCell>
+                      <TableCell>{floor.type}</TableCell>
+                      <TableCell>{floor.sqmAvailable.toLocaleString()} m²</TableCell>
+                      <TableCell>{floor.sqmOccupied.toLocaleString()} m²</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{floor.occupancyPercentage}%</span>
+                          <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${floor.occupancyPercentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* B Floor Companies Table */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">B Floor - Company Parking Allocations</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Spots Allowed</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {mockData.bFloorCompanies.map((company: any, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{company.company}</TableCell>
+                      <TableCell>{company.spotsAllowed}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* B Floor Overall Statistics */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">B Floor - Overall Occupancy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Spots Available</div>
+                    <div className="text-2xl font-bold text-primary">
+                      <Input 
+                        type="number" 
+                        value={bFloorStats.spotsAvailable}
+                        onChange={(e) => setBFloorStats({...bFloorStats, spotsAvailable: parseInt(e.target.value) || 0})}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Spots Occupied</div>
+                    <div className="text-2xl font-bold text-secondary">
+                      <Input 
+                        type="number" 
+                        value={bFloorStats.spotsOccupied}
+                        onChange={(e) => setBFloorStats({...bFloorStats, spotsOccupied: parseInt(e.target.value) || 0})}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Percentage of Occupancy</div>
+                    <div className="text-2xl font-bold flex items-center gap-2">
+                      <span>{((bFloorStats.spotsOccupied / bFloorStats.spotsAvailable) * 100).toFixed(1)}%</span>
+                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${(bFloorStats.spotsOccupied / bFloorStats.spotsAvailable) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         );
 
       case 'maintenance':
