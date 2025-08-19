@@ -141,12 +141,12 @@ const AdminDataTables = () => {
 
   const [feedbackForm, setFeedbackForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    tenant_id: "",
+    tenant_id: "none",
     type: "",
     category: "",
     description: "",
     status: "Under Review",
-    assigned_to: ""
+    assigned_to: "unassigned"
   });
 
   // Dropdown options state
@@ -618,12 +618,12 @@ const AdminDataTables = () => {
         .from('feedback_complaints')
         .update({
           date: feedbackForm.date,
-          tenant_id: feedbackForm.tenant_id || null,
+          tenant_id: feedbackForm.tenant_id === "none" ? null : feedbackForm.tenant_id,
           type: feedbackForm.type,
           category: feedbackForm.category,
           description: feedbackForm.description,
           status: feedbackForm.status,
-          assigned_to: feedbackForm.assigned_to || null
+          assigned_to: feedbackForm.assigned_to === "unassigned" ? null : feedbackForm.assigned_to
         })
         .eq('id', editingFeedback.id);
       
@@ -639,12 +639,12 @@ const AdminDataTables = () => {
         .from('feedback_complaints')
         .insert([{
           date: feedbackForm.date,
-          tenant_id: feedbackForm.tenant_id || null,
+          tenant_id: feedbackForm.tenant_id === "none" ? null : feedbackForm.tenant_id,
           type: feedbackForm.type,
           category: feedbackForm.category,
           description: feedbackForm.description,
           status: feedbackForm.status,
-          assigned_to: feedbackForm.assigned_to || null
+          assigned_to: feedbackForm.assigned_to === "unassigned" ? null : feedbackForm.assigned_to
         }]);
       
       if (error) {
@@ -659,12 +659,12 @@ const AdminDataTables = () => {
     setEditingFeedback(null);
     setFeedbackForm({
       date: new Date().toISOString().split('T')[0],
-      tenant_id: "",
+      tenant_id: "none",
       type: "",
       category: "",
       description: "",
       status: "Under Review",
-      assigned_to: ""
+      assigned_to: "unassigned"
     });
     fetchFeedbackData();
   };
@@ -673,12 +673,12 @@ const AdminDataTables = () => {
     setEditingFeedback(feedback);
     setFeedbackForm({
       date: feedback.date,
-      tenant_id: feedback.tenant_id || "",
+      tenant_id: feedback.tenant_id || "none",
       type: feedback.type,
       category: feedback.category,
       description: feedback.description,
       status: feedback.status,
-      assigned_to: feedback.assigned_to || ""
+      assigned_to: feedback.assigned_to || "unassigned"
     });
     setIsFeedbackDialogOpen(true);
   };
@@ -1780,7 +1780,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select tenant" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">None/Anonymous</SelectItem>
+                          <SelectItem value="none">None/Anonymous</SelectItem>
                           {tenants.map((tenant) => (
                             <SelectItem key={tenant.id} value={tenant.id}>
                               {tenant.name}
@@ -1851,7 +1851,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select assignee" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {feedbackDropdownOptions.assigned_to.map((assignee) => (
                             <SelectItem key={assignee} value={assignee}>
                               {assignee}
