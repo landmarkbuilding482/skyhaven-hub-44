@@ -12,6 +12,7 @@ import TenantForm from "./TenantForm";
 
 interface Tenant {
   id: string;
+  tenant_id: string;
   name: string;
   floor: string;
   space_type: string;
@@ -167,8 +168,8 @@ const TenantsTable = () => {
 
                   return (
                     <TableRow key={tenant.id}>
-                      <TableCell className="font-mono text-xs">
-                        {tenant.id.slice(0, 8)}...
+                      <TableCell className="font-mono text-sm font-medium">
+                        {tenant.tenant_id}
                       </TableCell>
                       <TableCell className="font-medium">{tenant.name}</TableCell>
                       <TableCell>{tenant.floor}</TableCell>

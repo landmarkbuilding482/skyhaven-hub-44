@@ -23,6 +23,7 @@ interface LeaseAgreement {
   tenants: {
     name: string;
     floor: string;
+    tenant_id: string;
   };
 }
 
@@ -67,7 +68,8 @@ export const LeaseAgreementsTable = () => {
           *,
           tenants (
             name,
-            floor
+            floor,
+            tenant_id
           )
         `)
         .order('created_at', { ascending: false });
@@ -86,7 +88,7 @@ export const LeaseAgreementsTable = () => {
     try {
       const { data, error } = await supabase
         .from('tenants')
-        .select('id, name, floor')
+        .select('id, name, floor, tenant_id')
         .eq('status', 'active')
         .order('name');
 
@@ -381,8 +383,8 @@ export const LeaseAgreementsTable = () => {
             <TableBody>
               {leases.map((lease) => (
                 <TableRow key={lease.id}>
-                  <TableCell className="font-mono text-sm">
-                    {lease.tenant_id.slice(0, 8)}...
+                  <TableCell className="font-mono text-sm font-medium">
+                    {lease.tenants?.tenant_id || 'N/A'}
                   </TableCell>
                   <TableCell className="font-medium">{lease.tenants?.name}</TableCell>
                   <TableCell>{lease.tenants?.floor}</TableCell>
@@ -465,7 +467,7 @@ export const LeaseAgreementsTable = () => {
                   <option value="">Select Tenant</option>
                   {tenants.map((tenant) => (
                     <option key={tenant.id} value={tenant.id}>
-                      {tenant.name} - Floor {tenant.floor}
+                      {tenant.tenant_id} - {tenant.name} - Floor {tenant.floor}
                     </option>
                   ))}
                 </select>

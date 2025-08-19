@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Tenant {
   id: string;
+  tenant_id: string;
   name: string;
   floor: string;
   space_type: string;
@@ -87,10 +88,27 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
           description: "Tenant updated successfully",
         });
       } else {
+        // Generate a unique tenant ID for new tenant
+        const { data: existingTenants } = await supabase
+          .from('tenants')
+          .select('tenant_id')
+          .order('tenant_id', { ascending: false })
+          .limit(1);
+
+        let nextId = 1001;
+        if (existingTenants && existingTenants.length > 0) {
+          const lastId = existingTenants[0].tenant_id;
+          const lastNumber = parseInt(lastId.split('-')[1]);
+          nextId = lastNumber + 1;
+        }
+
+        const floorPrefix = payload.floor === 'G' ? 'G' : payload.floor === 'B' ? 'B' : payload.floor;
+        const tenantId = `LMT-${floorPrefix}${nextId.toString().padStart(3, '0')}`;
+
         // Create new tenant
         const { error } = await supabase
           .from('tenants')
-          .insert([payload]);
+          .insert([{ ...payload, tenant_id: tenantId }]);
 
         if (error) throw error;
 
