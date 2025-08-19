@@ -1871,6 +1871,8 @@ const AdminDataTables = () => {
         </div>
       );
     }
+
+    if (selectedTable === 'eventBookings') {
       return (
         <Table>
           <TableHeader>
