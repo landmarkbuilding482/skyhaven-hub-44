@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      feedback_complaints: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          complaint_id: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          status: string
+          tenant_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          complaint_id?: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          status?: string
+          tenant_id?: string | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          complaint_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          status?: string
+          tenant_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_complaints_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       floor_occupancy: {
         Row: {
           created_at: string

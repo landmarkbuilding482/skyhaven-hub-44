@@ -56,6 +56,19 @@ type Utility = {
   amount: number;
 };
 
+type FeedbackComplaint = {
+  id: string;
+  complaint_id: string;
+  date: string;
+  tenant_id: string | null;
+  tenant_name?: string;
+  type: string;
+  category: string;
+  description: string;
+  status: string;
+  assigned_to: string | null;
+};
+
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -73,19 +86,26 @@ const AdminDataTables = () => {
   // State for utilities data
   const [utilitiesData, setUtilitiesData] = useState<Utility[]>([]);
   
+  // State for feedback & complaints data
+  const [feedbackData, setFeedbackData] = useState<FeedbackComplaint[]>([]);
+  const [tenants, setTenants] = useState<Array<{id: string, name: string}>>([]);
+  
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
+  const [isFeedbackDropdownConfigOpen, setIsFeedbackDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
+  const [editingFeedback, setEditingFeedback] = useState<FeedbackComplaint | null>(null);
   
   
   // Form states
@@ -119,6 +139,16 @@ const AdminDataTables = () => {
     amount: 0
   });
 
+  const [feedbackForm, setFeedbackForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    tenant_id: "",
+    type: "",
+    category: "",
+    description: "",
+    status: "Under Review",
+    assigned_to: ""
+  });
+
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -134,9 +164,18 @@ const AdminDataTables = () => {
     type: ["Electricity", "Water", "Gas", "Internet"]
   });
 
+  // Feedback & Complaints dropdown options state
+  const [feedbackDropdownOptions, setFeedbackDropdownOptions] = useState({
+    type: ["Complaint", "Feedback", "Suggestion"],
+    category: ["Maintenance", "Billing", "Security", "Amenities", "Noise", "Parking", "Cleanliness", "Staff", "Other"],
+    status: ["In Progress", "Under Review", "Closed"],
+    assigned_to: ["Building Manager", "Maintenance Team", "Security", "Admin", "Customer Service"]
+  });
+
   // Temp dropdown options for editing
   const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
   const [tempUtilitiesDropdownOptions, setTempUtilitiesDropdownOptions] = useState(utilitiesDropdownOptions);
+  const [tempFeedbackDropdownOptions, setTempFeedbackDropdownOptions] = useState(feedbackDropdownOptions);
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -237,6 +276,44 @@ const AdminDataTables = () => {
     setUtilitiesData(data || []);
   };
 
+  // Fetch feedback & complaints data
+  const fetchFeedbackData = async () => {
+    const { data, error } = await supabase
+      .from('feedback_complaints')
+      .select(`
+        *,
+        tenants!feedback_complaints_tenant_id_fkey(name)
+      `)
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch feedback & complaints data');
+      return;
+    }
+    
+    const formattedData = data?.map(item => ({
+      ...item,
+      tenant_name: item.tenants?.name || 'N/A'
+    })) || [];
+    
+    setFeedbackData(formattedData);
+  };
+
+  // Fetch tenants for dropdown
+  const fetchTenants = async () => {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('id, name')
+      .order('name');
+    
+    if (error) {
+      console.error('Failed to fetch tenants:', error);
+      return;
+    }
+    
+    setTenants(data || []);
+  };
+
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -248,6 +325,9 @@ const AdminDataTables = () => {
       fetchTenantsList();
     } else if (selectedTable === 'utilities') {
       fetchUtilitiesData();
+    } else if (selectedTable === 'feedback') {
+      fetchFeedbackData();
+      fetchTenants();
     }
   }, [selectedTable]);
 
@@ -530,6 +610,94 @@ const AdminDataTables = () => {
     fetchUtilitiesData();
   };
 
+  // CRUD functions for feedback & complaints
+  const handleFeedbackSubmit = async () => {
+    if (editingFeedback) {
+      // Update existing feedback
+      const { error } = await supabase
+        .from('feedback_complaints')
+        .update({
+          date: feedbackForm.date,
+          tenant_id: feedbackForm.tenant_id || null,
+          type: feedbackForm.type,
+          category: feedbackForm.category,
+          description: feedbackForm.description,
+          status: feedbackForm.status,
+          assigned_to: feedbackForm.assigned_to || null
+        })
+        .eq('id', editingFeedback.id);
+      
+      if (error) {
+        toast.error('Failed to update feedback record');
+        return;
+      }
+      
+      toast.success('Feedback record updated successfully');
+    } else {
+      // Create new feedback
+      const { error } = await supabase
+        .from('feedback_complaints')
+        .insert([{
+          date: feedbackForm.date,
+          tenant_id: feedbackForm.tenant_id || null,
+          type: feedbackForm.type,
+          category: feedbackForm.category,
+          description: feedbackForm.description,
+          status: feedbackForm.status,
+          assigned_to: feedbackForm.assigned_to || null
+        }]);
+      
+      if (error) {
+        toast.error('Failed to create feedback record');
+        return;
+      }
+      
+      toast.success('Feedback record created successfully');
+    }
+    
+    setIsFeedbackDialogOpen(false);
+    setEditingFeedback(null);
+    setFeedbackForm({
+      date: new Date().toISOString().split('T')[0],
+      tenant_id: "",
+      type: "",
+      category: "",
+      description: "",
+      status: "Under Review",
+      assigned_to: ""
+    });
+    fetchFeedbackData();
+  };
+
+  const handleFeedbackEdit = (feedback: FeedbackComplaint) => {
+    setEditingFeedback(feedback);
+    setFeedbackForm({
+      date: feedback.date,
+      tenant_id: feedback.tenant_id || "",
+      type: feedback.type,
+      category: feedback.category,
+      description: feedback.description,
+      status: feedback.status,
+      assigned_to: feedback.assigned_to || ""
+    });
+    setIsFeedbackDialogOpen(true);
+  };
+
+  const handleFeedbackDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('feedback_complaints')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete feedback record');
+      return;
+    }
+    
+    toast.success('Feedback record deleted successfully');
+    fetchFeedbackData();
+  };
+
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -553,6 +721,18 @@ const AdminDataTables = () => {
   const handleUtilitiesDropdownConfigCancel = () => {
     setTempUtilitiesDropdownOptions(utilitiesDropdownOptions);
     setIsUtilitiesDropdownConfigOpen(false);
+  };
+
+  // Feedback dropdown configuration functions
+  const handleFeedbackDropdownConfigSave = () => {
+    setFeedbackDropdownOptions(tempFeedbackDropdownOptions);
+    setIsFeedbackDropdownConfigOpen(false);
+    toast.success('Feedback dropdown options updated successfully');
+  };
+
+  const handleFeedbackDropdownConfigCancel = () => {
+    setTempFeedbackDropdownOptions(feedbackDropdownOptions);
+    setIsFeedbackDropdownConfigOpen(false);
   };
 
   const addDropdownOption = (category: string, newOption: string) => {
@@ -1554,56 +1734,256 @@ const AdminDataTables = () => {
 
 
     if (selectedTable === 'feedback') {
+      const filteredFeedback = feedbackData.filter(feedback =>
+        feedback.complaint_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.assigned_to?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Tenant</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.date}</TableCell>
-                <TableCell>{item.tenant}</TableCell>
-                <TableCell>{item.type}</TableCell>
-                <TableCell>{item.category}</TableCell>
-                <TableCell>{item.description}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.priority)}>
-                    {item.priority}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.assignedTo}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Feedback Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>{editingFeedback ? 'Edit' : 'Add'} Feedback & Complaint</DialogTitle>
+                    <DialogDescription>
+                      {editingFeedback ? 'Edit the feedback record' : 'Enter the feedback details below.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="date" className="text-right">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={feedbackForm.date}
+                        onChange={(e) => setFeedbackForm({ ...feedbackForm, date: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="tenant" className="text-right">Tenant</Label>
+                      <Select value={feedbackForm.tenant_id} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, tenant_id: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select tenant" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None/Anonymous</SelectItem>
+                          {tenants.map((tenant) => (
+                            <SelectItem key={tenant.id} value={tenant.id}>
+                              {tenant.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="type" className="text-right">Type</Label>
+                      <Select value={feedbackForm.type} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {feedbackDropdownOptions.type.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="category" className="text-right">Category</Label>
+                      <Select value={feedbackForm.category} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, category: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {feedbackDropdownOptions.category.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="description" className="text-right">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={feedbackForm.description}
+                        onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Enter description..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="status" className="text-right">Status</Label>
+                      <Select value={feedbackForm.status} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, status: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {feedbackDropdownOptions.status.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="assigned_to" className="text-right">Assigned To</Label>
+                      <Select value={feedbackForm.assigned_to} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, assigned_to: value })}>
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Select assignee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Unassigned</SelectItem>
+                          {feedbackDropdownOptions.assigned_to.map((assignee) => (
+                            <SelectItem key={assignee} value={assignee}>
+                              {assignee}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </TableCell>
+                  <DialogFooter>
+                    <Button onClick={handleFeedbackSubmit}>
+                      {editingFeedback ? 'Update' : 'Add'} Feedback
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isFeedbackDropdownConfigOpen} onOpenChange={setIsFeedbackDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Configure Dropdowns</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure Feedback Dropdown Options</DialogTitle>
+                    <DialogDescription>
+                      Manage the dropdown options for feedback & complaints.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    {Object.entries(tempFeedbackDropdownOptions).map(([category, options]) => (
+                      <div key={category} className="space-y-2">
+                        <Label className="text-sm font-medium capitalize">{category.replace('_', ' ')}</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {options.map((option, index) => (
+                            <div key={index} className="flex items-center bg-secondary rounded-md px-3 py-1">
+                              <span className="text-sm">{option}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-2 h-4 w-4 p-0"
+                                onClick={() => {
+                                  const newOptions = { ...tempFeedbackDropdownOptions };
+                                  newOptions[category as keyof typeof newOptions] = newOptions[category as keyof typeof newOptions].filter((_, i) => i !== index);
+                                  setTempFeedbackDropdownOptions(newOptions);
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add new ${category.replace('_', ' ')}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const input = e.target as HTMLInputElement;
+                                if (input.value.trim()) {
+                                  const newOptions = { ...tempFeedbackDropdownOptions };
+                                  if (!newOptions[category as keyof typeof newOptions].includes(input.value.trim())) {
+                                    newOptions[category as keyof typeof newOptions] = [...newOptions[category as keyof typeof newOptions], input.value.trim()];
+                                    setTempFeedbackDropdownOptions(newOptions);
+                                  }
+                                  input.value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleFeedbackDropdownConfigCancel}>Cancel</Button>
+                    <Button onClick={handleFeedbackDropdownConfigSave}>Save Changes</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Tenant</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Assigned To</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredFeedback.map((feedback) => (
+                <TableRow key={feedback.id}>
+                  <TableCell className="font-medium">{feedback.complaint_id}</TableCell>
+                  <TableCell>{new Date(feedback.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{feedback.tenant_name}</TableCell>
+                  <TableCell>
+                    <Badge variant={feedback.type === 'Complaint' ? 'destructive' : feedback.type === 'Feedback' ? 'default' : 'secondary'}>
+                      {feedback.type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{feedback.category}</TableCell>
+                  <TableCell className="max-w-xs truncate">{feedback.description}</TableCell>
+                  <TableCell>
+                    <Badge variant={feedback.status === 'Closed' ? 'default' : feedback.status === 'In Progress' ? 'secondary' : 'outline'}>
+                      {feedback.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{feedback.assigned_to || 'Unassigned'}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackEdit(feedback)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackDelete(feedback.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       );
     }
 
