@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -238,25 +238,23 @@ const TenantsTable = () => {
         </CardContent>
       </Card>
 
-      <Sheet open={showForm} onOpenChange={setShowForm}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle>
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
               {editingTenant ? 'Edit Tenant' : 'Add New Tenant'}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="mt-6">
-            <TenantForm
-              tenant={editingTenant}
-              onSuccess={handleFormSuccess}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingTenant(null);
-              }}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+            </DialogTitle>
+          </DialogHeader>
+          <TenantForm
+            tenant={editingTenant}
+            onSuccess={handleFormSuccess}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingTenant(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
