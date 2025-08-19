@@ -97,6 +97,7 @@ const AdminDataTables = () => {
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [isFeedbackViewDialogOpen, setIsFeedbackViewDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
@@ -106,6 +107,7 @@ const AdminDataTables = () => {
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
   const [editingFeedback, setEditingFeedback] = useState<FeedbackComplaint | null>(null);
+  const [viewingFeedback, setViewingFeedback] = useState<FeedbackComplaint | null>(null);
   
   
   // Form states
@@ -696,6 +698,11 @@ const AdminDataTables = () => {
     
     toast.success('Feedback record deleted successfully');
     fetchFeedbackData();
+  };
+
+  const handleFeedbackView = (feedback: FeedbackComplaint) => {
+    setViewingFeedback(feedback);
+    setIsFeedbackViewDialogOpen(true);
   };
 
 
@@ -1968,7 +1975,7 @@ const AdminDataTables = () => {
                   <TableCell>{feedback.assigned_to || 'Unassigned'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackView(feedback)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="sm" onClick={() => handleFeedbackEdit(feedback)}>
@@ -1983,6 +1990,79 @@ const AdminDataTables = () => {
               ))}
             </TableBody>
           </Table>
+
+          {/* View Feedback Dialog */}
+          <Dialog open={isFeedbackViewDialogOpen} onOpenChange={setIsFeedbackViewDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Feedback & Complaint Details</DialogTitle>
+                <DialogDescription>
+                  View complete details of the feedback/complaint record.
+                </DialogDescription>
+              </DialogHeader>
+              {viewingFeedback && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="text-sm font-mono">{viewingFeedback.complaint_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                      <p className="text-sm">{new Date(viewingFeedback.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Tenant</Label>
+                      <p className="text-sm">{viewingFeedback.tenant_name || 'Anonymous'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                      <Badge variant={viewingFeedback.type === 'Complaint' ? 'destructive' : viewingFeedback.type === 'Feedback' ? 'default' : 'secondary'}>
+                        {viewingFeedback.type}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p className="text-sm">{viewingFeedback.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                      <Badge variant={viewingFeedback.status === 'Closed' ? 'default' : viewingFeedback.status === 'In Progress' ? 'secondary' : 'outline'}>
+                        {viewingFeedback.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Assigned To</Label>
+                    <p className="text-sm">{viewingFeedback.assigned_to || 'Unassigned'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap">{viewingFeedback.description}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsFeedbackViewDialogOpen(false)}>
+                  Close
+                </Button>
+                {viewingFeedback && (
+                  <Button onClick={() => {
+                    setIsFeedbackViewDialogOpen(false);
+                    handleFeedbackEdit(viewingFeedback);
+                  }}>
+                    Edit Record
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       );
     }
