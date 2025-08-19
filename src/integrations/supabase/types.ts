@@ -58,6 +58,53 @@ export type Database = {
           },
         ]
       }
+      rent_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          last_paid_rent_date: string | null
+          method: string
+          month_year_range: string
+          payment_date: string
+          tenant_id: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          last_paid_rent_date?: string | null
+          method: string
+          month_year_range: string
+          payment_date: string
+          tenant_id: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          last_paid_rent_date?: string | null
+          method?: string
+          month_year_range?: string
+          payment_date?: string
+          tenant_id?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           business_type: string
