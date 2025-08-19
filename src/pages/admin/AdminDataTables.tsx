@@ -256,10 +256,14 @@ const AdminDataTables = () => {
 
   // Fetch foot traffic data
   const fetchFootTrafficData = async () => {
+    console.log('Fetching foot traffic data...');
     const { data, error } = await supabase
       .from('foot_traffic')
       .select('*')
       .order('date', { ascending: false });
+    
+    console.log('Foot traffic data:', data);
+    console.log('Foot traffic error:', error);
     
     if (error) {
       toast.error('Failed to fetch foot traffic data');
@@ -1741,6 +1745,9 @@ const AdminDataTables = () => {
 
     // Handle foot traffic table with real backend
     if (selectedTable === 'foot_traffic') {
+      console.log('Rendering foot traffic table, data:', footTrafficData);
+      console.log('Selected table:', selectedTable);
+      
       const filteredFootTraffic = footTrafficData.filter((traffic) =>
         traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
