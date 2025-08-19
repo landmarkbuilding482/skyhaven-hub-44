@@ -270,6 +270,20 @@ const AdminDataTables = () => {
   };
 
   useEffect(() => {
+    const fetchFootTrafficDataLocal = async () => {
+      const { data, error } = await supabase
+        .from('foot_traffic')
+        .select('*')
+        .order('date', { ascending: false });
+      
+      if (error) {
+        toast.error('Failed to fetch foot traffic data');
+        return;
+      }
+      
+      setFootTrafficData(data || []);
+    };
+
     if (selectedTable === 'occupancy') {
       fetchFloorData();
       fetchParkingAllocations();
