@@ -293,7 +293,7 @@ export type Database = {
           amount: number
           created_at: string
           date: string
-          id: number
+          id: string
           type: string
           updated_at: string
         }
@@ -301,7 +301,7 @@ export type Database = {
           amount?: number
           created_at?: string
           date: string
-          id?: number
+          id?: string
           type: string
           updated_at?: string
         }
@@ -309,7 +309,7 @@ export type Database = {
           amount?: number
           created_at?: string
           date?: string
-          id?: number
+          id?: string
           type?: string
           updated_at?: string
         }
@@ -320,7 +320,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_short_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

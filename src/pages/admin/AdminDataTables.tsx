@@ -50,7 +50,7 @@ type MaintenanceRepair = {
 };
 
 type Utility = {
-  id: number;
+  id: string;
   date: string;
   type: string;
   amount: number;
@@ -513,7 +513,7 @@ const AdminDataTables = () => {
     setIsUtilitiesDialogOpen(true);
   };
 
-  const handleUtilitiesDelete = async (id: number) => {
+  const handleUtilitiesDelete = async (id: string) => {
     const { error } = await supabase
       .from('utilities')
       .delete()
