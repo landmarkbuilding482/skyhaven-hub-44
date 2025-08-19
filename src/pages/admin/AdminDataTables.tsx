@@ -252,16 +252,19 @@ const AdminDataTables = () => {
 
   // Fetch visitor traffic data
   const fetchVisitorTrafficData = async () => {
+    console.log('Fetching visitor traffic data...');
     const { data, error } = await supabase
       .from('visitor_foot_traffic')
       .select('*')
       .order('date', { ascending: false });
     
     if (error) {
+      console.error('Error fetching visitor traffic:', error);
       toast.error('Failed to fetch visitor traffic data');
       return;
     }
     
+    console.log('Visitor traffic data:', data);
     setVisitorTrafficData(data || []);
   };
 
@@ -1735,6 +1738,7 @@ const AdminDataTables = () => {
     }
 
     if (selectedTable === 'visitor_traffic') {
+      console.log('Rendering visitor traffic table, data:', visitorTrafficData);
       const filteredVisitorTraffic = visitorTrafficData.filter((traffic) =>
         traffic.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
         traffic.floor.toLowerCase().includes(searchTerm.toLowerCase()) ||
