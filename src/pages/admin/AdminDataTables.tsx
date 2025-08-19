@@ -49,6 +49,13 @@ type MaintenanceRepair = {
   completion_date: string | null;
 };
 
+type Utility = {
+  id: string;
+  date: string;
+  type: string;
+  amount: number;
+};
+
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,14 +69,20 @@ const AdminDataTables = () => {
   const [maintenanceData, setMaintenanceData] = useState<MaintenanceRepair[]>([]);
   const [tenantsList, setTenantsList] = useState<string[]>([]);
   
+  // State for utilities data
+  const [utilitiesData, setUtilitiesData] = useState<Utility[]>([]);
+  
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
+  const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
+  const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
+  const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
   
   // Form states
   const [floorForm, setFloorForm] = useState({
@@ -96,6 +109,12 @@ const AdminDataTables = () => {
     status: "Reported"
   });
 
+  const [utilitiesForm, setUtilitiesForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    type: "",
+    amount: 0
+  });
+
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -106,8 +125,14 @@ const AdminDataTables = () => {
     floor: ["G", "1", "2", "3", "4", "5", "6", "7", "8", "B"]
   });
 
+  // Utilities dropdown options state
+  const [utilitiesDropdownOptions, setUtilitiesDropdownOptions] = useState({
+    type: ["Electricity", "Water", "Gas", "Internet"]
+  });
+
   // Temp dropdown options for editing
   const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
+  const [tempUtilitiesDropdownOptions, setTempUtilitiesDropdownOptions] = useState(utilitiesDropdownOptions);
 
   const tables = [
     { value: "tenantsManagement", label: "Tenants Management (Live)" },
@@ -196,6 +221,18 @@ const AdminDataTables = () => {
     setTenantsList(data?.map(tenant => tenant.name) || []);
   };
 
+  // Fetch utilities data
+  const fetchUtilitiesData = async () => {
+    // Mock data for now - you can replace with actual Supabase call when table is created
+    const mockUtilities: Utility[] = [
+      { id: "1", date: "2024-08-01", type: "Electricity", amount: 2450 },
+      { id: "2", date: "2024-08-01", type: "Water", amount: 890 },
+      { id: "3", date: "2024-08-01", type: "Gas", amount: 320 },
+      { id: "4", date: "2024-08-01", type: "Internet", amount: 450 },
+    ];
+    setUtilitiesData(mockUtilities);
+  };
+
   useEffect(() => {
     if (selectedTable === 'occupancy') {
       fetchFloorData();
@@ -204,6 +241,8 @@ const AdminDataTables = () => {
     } else if (selectedTable === 'maintenance') {
       fetchMaintenanceData();
       fetchTenantsList();
+    } else if (selectedTable === 'utilities') {
+      fetchUtilitiesData();
     }
   }, [selectedTable]);
 
@@ -422,6 +461,48 @@ const AdminDataTables = () => {
     fetchMaintenanceData();
   };
 
+  // CRUD functions for utilities
+  const handleUtilitiesSubmit = async () => {
+    if (editingUtility) {
+      // Update existing utility (mock implementation)
+      setUtilitiesData(prev => prev.map(u => 
+        u.id === editingUtility.id ? { ...u, ...utilitiesForm } : u
+      ));
+      toast.success('Utility record updated successfully');
+    } else {
+      // Create new utility (mock implementation)
+      const newUtility: Utility = {
+        id: String(Date.now()),
+        ...utilitiesForm
+      };
+      setUtilitiesData(prev => [...prev, newUtility]);
+      toast.success('Utility record created successfully');
+    }
+    
+    setIsUtilitiesDialogOpen(false);
+    setEditingUtility(null);
+    setUtilitiesForm({
+      date: new Date().toISOString().split('T')[0],
+      type: "",
+      amount: 0
+    });
+  };
+
+  const handleUtilitiesEdit = (utility: Utility) => {
+    setEditingUtility(utility);
+    setUtilitiesForm({
+      date: utility.date,
+      type: utility.type,
+      amount: utility.amount
+    });
+    setIsUtilitiesDialogOpen(true);
+  };
+
+  const handleUtilitiesDelete = async (id: string) => {
+    setUtilitiesData(prev => prev.filter(u => u.id !== id));
+    toast.success('Utility record deleted successfully');
+  };
+
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
     setDropdownOptions(tempDropdownOptions);
@@ -432,6 +513,18 @@ const AdminDataTables = () => {
   const handleDropdownConfigCancel = () => {
     setTempDropdownOptions(dropdownOptions);
     setIsDropdownConfigOpen(false);
+  };
+
+  // Utilities dropdown configuration functions
+  const handleUtilitiesDropdownConfigSave = () => {
+    setUtilitiesDropdownOptions(tempUtilitiesDropdownOptions);
+    setIsUtilitiesDropdownConfigOpen(false);
+    toast.success('Utilities dropdown options updated successfully');
+  };
+
+  const handleUtilitiesDropdownConfigCancel = () => {
+    setTempUtilitiesDropdownOptions(utilitiesDropdownOptions);
+    setIsUtilitiesDropdownConfigOpen(false);
   };
 
   const addDropdownOption = (category: string, newOption: string) => {
@@ -1324,50 +1417,176 @@ const AdminDataTables = () => {
     }
 
     if (selectedTable === 'utilities') {
+      const filteredUtilities = utilitiesData.filter((utility) =>
+        utility.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        utility.date.includes(searchTerm.toLowerCase()) ||
+        utility.amount.toString().includes(searchTerm.toLowerCase())
+      );
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Month</TableHead>
-              <TableHead>Electricity</TableHead>
-              <TableHead>Water</TableHead>
-              <TableHead>Gas</TableHead>
-              <TableHead>Internet</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((item: any) => (
-              <TableRow key={item.id}>
-                <TableCell className="font-medium">{item.id}</TableCell>
-                <TableCell>{item.month}</TableCell>
-                <TableCell>{item.electricity}</TableCell>
-                <TableCell>{item.water}</TableCell>
-                <TableCell>{item.gas}</TableCell>
-                <TableCell>{item.internet}</TableCell>
-                <TableCell className="font-medium">{item.total}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Upload className="h-4 w-4" />
-                    </Button>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Utilities Records</h3>
+            <div className="flex gap-2">
+              <Dialog open={isUtilitiesDropdownConfigOpen} onOpenChange={setIsUtilitiesDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" onClick={() => setTempUtilitiesDropdownOptions(utilitiesDropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Configure Utilities Dropdown Options</DialogTitle>
+                    <DialogDescription>
+                      Manage the available options for utility types.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Utility Types</Label>
+                      <div className="space-y-2">
+                        {tempUtilitiesDropdownOptions.type.map((option, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm">{option}</span>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setTempUtilitiesDropdownOptions(prev => ({
+                                  ...prev,
+                                  type: prev.type.filter(item => item !== option)
+                                }));
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Add new utility type"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                const newOption = e.currentTarget.value.trim();
+                                if (newOption && !tempUtilitiesDropdownOptions.type.includes(newOption)) {
+                                  setTempUtilitiesDropdownOptions(prev => ({
+                                    ...prev,
+                                    type: [...prev.type, newOption]
+                                  }));
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </TableCell>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleUtilitiesDropdownConfigCancel}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUtilitiesDropdownConfigSave}>
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={isUtilitiesDialogOpen} onOpenChange={setIsUtilitiesDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingUtility ? 'Edit Utility Record' : 'Add New Utility Record'}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={utilitiesForm.date}
+                        onChange={(e) => setUtilitiesForm({ ...utilitiesForm, date: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="type">Type</Label>
+                      <Select value={utilitiesForm.type} onValueChange={(value) => setUtilitiesForm({ ...utilitiesForm, type: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select utility type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {utilitiesDropdownOptions.type.map((option) => (
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="amount">Amount</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        value={utilitiesForm.amount}
+                        onChange={(e) => setUtilitiesForm({ ...utilitiesForm, amount: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsUtilitiesDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUtilitiesSubmit}>
+                      {editingUtility ? 'Update' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredUtilities.map((utility) => (
+                <TableRow key={utility.id}>
+                  <TableCell className="font-medium">{utility.id}</TableCell>
+                  <TableCell>{new Date(utility.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{utility.type}</TableCell>
+                  <TableCell>${utility.amount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesEdit(utility)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesDelete(utility.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       );
     }
 
