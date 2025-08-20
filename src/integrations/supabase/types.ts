@@ -237,6 +237,33 @@ export type Database = {
         }
         Relationships: []
       }
+      paid_parking: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          number_of_vehicles: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          number_of_vehicles?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          number_of_vehicles?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parking_allocations: {
         Row: {
           company: string
