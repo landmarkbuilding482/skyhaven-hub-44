@@ -93,13 +93,6 @@ type AssetInventory = {
   warranty_year: number | null;
 };
 
-type PaidParking = {
-  id: string;
-  date: string;
-  number_of_vehicles: number;
-  amount: number;
-};
-
 
 const AdminDataTables = () => {
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -126,9 +119,6 @@ const AdminDataTables = () => {
   
   // State for asset inventory data
   const [assetInventoryData, setAssetInventoryData] = useState<AssetInventory[]>([]);
-
-  // State for paid parking data
-  const [paidParkingData, setPaidParkingData] = useState<PaidParking[]>([]);
   
   
   // Dialog states
@@ -142,7 +132,6 @@ const AdminDataTables = () => {
   const [isRevenueExpenseViewDialogOpen, setIsRevenueExpenseViewDialogOpen] = useState(false);
   const [isAssetInventoryDialogOpen, setIsAssetInventoryDialogOpen] = useState(false);
   const [isAssetInventoryViewDialogOpen, setIsAssetInventoryViewDialogOpen] = useState(false);
-  const [isPaidParkingDialogOpen, setIsPaidParkingDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
@@ -159,7 +148,6 @@ const AdminDataTables = () => {
   const [viewingRevenueExpense, setViewingRevenueExpense] = useState<RevenueExpense | null>(null);
   const [editingAssetInventory, setEditingAssetInventory] = useState<AssetInventory | null>(null);
   const [viewingAssetInventory, setViewingAssetInventory] = useState<AssetInventory | null>(null);
-  const [editingPaidParking, setEditingPaidParking] = useState<PaidParking | null>(null);
   
   
   // Form states
@@ -223,12 +211,6 @@ const AdminDataTables = () => {
     warranty_year: ""
   });
 
-  const [paidParkingForm, setPaidParkingForm] = useState({
-    date: new Date().toISOString().split('T')[0],
-    number_of_vehicles: 0,
-    amount: 0
-  });
-
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -281,8 +263,7 @@ const AdminDataTables = () => {
     { value: "utilities", label: "Utilities Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
     { value: "revenue", label: "Revenue & Expenses Table" },
-    { value: "assets", label: "Asset Inventory Table" },
-    { value: "paidParking", label: "Paid Parking" }
+    { value: "assets", label: "Asset Inventory Table" }
   ];
 
   // Fetch data functions
@@ -440,21 +421,6 @@ const AdminDataTables = () => {
     setAssetInventoryData(data || []);
   };
 
-  // Fetch paid parking data
-  const fetchPaidParkingData = async () => {
-    const { data, error } = await supabase
-      .from('paid_parking')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (error) {
-      toast.error('Failed to fetch paid parking data');
-      return;
-    }
-
-    setPaidParkingData(data || []);
-  };
-
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -473,8 +439,6 @@ const AdminDataTables = () => {
       fetchRevenueExpenseData();
     } else if (selectedTable === 'assets') {
       fetchAssetInventoryData();
-    } else if (selectedTable === 'paidParking') {
-      fetchPaidParkingData();
     }
   }, [selectedTable]);
 
@@ -1016,67 +980,6 @@ const AdminDataTables = () => {
     setIsAssetInventoryViewDialogOpen(true);
   };
 
-  // CRUD functions for paid parking
-  const handlePaidParkingSubmit = async () => {
-    if (editingPaidParking) {
-      // Update existing paid parking entry
-      const { error } = await supabase
-        .from('paid_parking')
-        .update(paidParkingForm)
-        .eq('id', editingPaidParking.id);
-
-      if (error) {
-        toast.error('Failed to update paid parking record');
-        return;
-      }
-      toast.success('Paid parking record updated successfully');
-    } else {
-      // Create new paid parking entry
-      const { error } = await supabase
-        .from('paid_parking')
-        .insert([paidParkingForm]);
-
-      if (error) {
-        toast.error('Failed to create paid parking record');
-        return;
-      }
-      toast.success('Paid parking record created successfully');
-    }
-
-    setIsPaidParkingDialogOpen(false);
-    setEditingPaidParking(null);
-    setPaidParkingForm({
-      date: new Date().toISOString().split('T')[0],
-      number_of_vehicles: 0,
-      amount: 0
-    });
-    fetchPaidParkingData();
-  };
-
-  const handlePaidParkingEdit = (entry: PaidParking) => {
-    setEditingPaidParking(entry);
-    setPaidParkingForm({
-      date: entry.date,
-      number_of_vehicles: entry.number_of_vehicles,
-      amount: entry.amount
-    });
-    setIsPaidParkingDialogOpen(true);
-  };
-
-  const handlePaidParkingDelete = async (id: string) => {
-    const { error } = await supabase
-      .from('paid_parking')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast.error('Failed to delete paid parking record');
-      return;
-    }
-    toast.success('Paid parking record deleted successfully');
-    fetchPaidParkingData();
-  };
-
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -1392,7 +1295,7 @@ const AdminDataTables = () => {
 
   const renderTable = () => {
     if (!selectedTable) return null;
-  
+
     // Handle live components separately
     if (selectedTable === 'tenantsManagement') {
       return <TenantsTable />;
@@ -1403,8 +1306,14 @@ const AdminDataTables = () => {
     if (selectedTable === 'rentPaymentsLive') {
       return <RentPaymentsTable />;
     }
+
     if (selectedTable === 'occupancy') {
-      const filteredFloorData = floorData.filter((item) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
+      const filteredFloorData = floorData.filter((item) =>
+        Object.values(item).some(value =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+
       return (
         <div className="space-y-6">
           {/* Main Occupancy Table for Floors 8-G */}
@@ -1413,8 +1322,12 @@ const AdminDataTables = () => {
               <h3 className="text-lg font-semibold">Floor Occupancy (Floors 8-G)</h3>
               <Dialog open={isFloorDialogOpen} onOpenChange={setIsFloorDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingFloor(null); setFloorForm({ floor: "", type: "", square_meters_available: 0, square_meters_occupied: 0 }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button variant="default" size="sm" onClick={() => {
+                    setEditingFloor(null);
+                    setFloorForm({ floor: "", type: "", square_meters_available: 0, square_meters_occupied: 0 });
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Entry
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -1427,19 +1340,41 @@ const AdminDataTables = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="floor" className="text-right">Floor</Label>
-                      <Input id="floor" value={floorForm.floor} onChange={(e) => setFloorForm({ ...floorForm, floor: e.target.value })} className="col-span-3" />
+                      <Input
+                        id="floor"
+                        value={floorForm.floor}
+                        onChange={(e) => setFloorForm({ ...floorForm, floor: e.target.value })}
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="type" className="text-right">Type</Label>
-                      <Input id="type" value={floorForm.type} onChange={(e) => setFloorForm({ ...floorForm, type: e.target.value })} className="col-span-3" />
+                      <Input
+                        id="type"
+                        value={floorForm.type}
+                        onChange={(e) => setFloorForm({ ...floorForm, type: e.target.value })}
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="available" className="text-right">Available (m²)</Label>
-                      <Input id="available" type="number" value={floorForm.square_meters_available} onChange={(e) => setFloorForm({ ...floorForm, square_meters_available: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                      <Input
+                        id="available"
+                        type="number"
+                        value={floorForm.square_meters_available}
+                        onChange={(e) => setFloorForm({ ...floorForm, square_meters_available: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="occupied" className="text-right">Occupied (m²)</Label>
-                      <Input id="occupied" type="number" value={floorForm.square_meters_occupied} onChange={(e) => setFloorForm({ ...floorForm, square_meters_occupied: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                      <Input
+                        id="occupied"
+                        type="number"
+                        value={floorForm.square_meters_occupied}
+                        onChange={(e) => setFloorForm({ ...floorForm, square_meters_occupied: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
@@ -1474,7 +1409,10 @@ const AdminDataTables = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{occupancyPercentage}%</span>
                           <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${occupancyPercentage}%` }} />
+                            <div 
+                              className="h-full bg-primary rounded-full transition-all" 
+                              style={{ width: `${occupancyPercentage}%` }} 
+                            />
                           </div>
                         </div>
                       </TableCell>
@@ -1494,14 +1432,19 @@ const AdminDataTables = () => {
               </TableBody>
             </Table>
           </div>
+
           {/* B Floor Companies Table */}
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">B Floor - Company Parking Allocations</h3>
               <Dialog open={isParkingDialogOpen} onOpenChange={setIsParkingDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingParking(null); setParkingForm({ company: "", spots_allowed: 0 }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button variant="default" size="sm" onClick={() => {
+                    setEditingParking(null);
+                    setParkingForm({ company: "", spots_allowed: 0 });
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Entry
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -1514,11 +1457,22 @@ const AdminDataTables = () => {
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="company" className="text-right">Company</Label>
-                      <Input id="company" value={parkingForm.company} onChange={(e) => setParkingForm({ ...parkingForm, company: e.target.value })} className="col-span-3" />
+                      <Input
+                        id="company"
+                        value={parkingForm.company}
+                        onChange={(e) => setParkingForm({ ...parkingForm, company: e.target.value })}
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="spots" className="text-right">Spots Allowed</Label>
-                      <Input id="spots" type="number" value={parkingForm.spots_allowed} onChange={(e) => setParkingForm({ ...parkingForm, spots_allowed: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                      <Input
+                        id="spots"
+                        type="number"
+                        value={parkingForm.spots_allowed}
+                        onChange={(e) => setParkingForm({ ...parkingForm, spots_allowed: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                      />
                     </div>
                   </div>
                   <DialogFooter>
@@ -1557,6 +1511,7 @@ const AdminDataTables = () => {
               </TableBody>
             </Table>
           </div>
+
           {/* B Floor Overall Statistics */}
           {parkingStats && (
             <div>
@@ -1566,7 +1521,12 @@ const AdminDataTables = () => {
                   <CardContent className="p-4">
                     <div className="text-sm text-muted-foreground">Spots Available</div>
                     <div className="text-2xl font-bold text-primary">
-                      <Input type="number" value={parkingStats.spots_available} onChange={(e) => updateParkingStats('spots_available', parseInt(e.target.value) || 0)} className="text-2xl font-bold border-none p-0 h-auto bg-transparent" />
+                      <Input 
+                        type="number" 
+                        value={parkingStats.spots_available} 
+                        onChange={(e) => updateParkingStats('spots_available', parseInt(e.target.value) || 0)}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent" 
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -1574,7 +1534,12 @@ const AdminDataTables = () => {
                   <CardContent className="p-4">
                     <div className="text-sm text-muted-foreground">Spots Occupied</div>
                     <div className="text-2xl font-bold text-primary">
-                      <Input type="number" value={parkingStats.spots_occupied} onChange={(e) => updateParkingStats('spots_occupied', parseInt(e.target.value) || 0)} className="text-2xl font-bold border-none p-0 h-auto bg-transparent" />
+                      <Input 
+                        type="number" 
+                        value={parkingStats.spots_occupied} 
+                        onChange={(e) => updateParkingStats('spots_occupied', parseInt(e.target.value) || 0)}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent" 
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -1585,7 +1550,12 @@ const AdminDataTables = () => {
                       {calculateOccupancyPercentage(parkingStats.spots_occupied, parkingStats.spots_available)}%
                     </div>
                     <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
-                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${calculateOccupancyPercentage(parkingStats.spots_occupied, parkingStats.spots_available)}%` }} />
+                      <div 
+                        className="h-full bg-primary rounded-full transition-all" 
+                        style={{ 
+                          width: `${calculateOccupancyPercentage(parkingStats.spots_occupied, parkingStats.spots_available)}%` 
+                        }} 
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -1596,51 +1566,245 @@ const AdminDataTables = () => {
       );
     }
 
-    if (selectedTable === 'paidParking') {
-      const filteredPaidParkingData = paidParkingData.filter((item) =>
-        Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()))
+    // Handle other mock tables
+    const data = mockData[selectedTable as keyof typeof mockData];
+    if (!data) return null;
+
+    const filteredData = data.filter((item: any) =>
+      Object.values(item).some(value =>
+        value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+
+    // Handle maintenance table with real backend
+    if (selectedTable === 'maintenance') {
+      const filteredMaintenanceData = maintenanceData.filter((item) =>
+        Object.values(item).some(value =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
+
       return (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Paid Parking</h3>
-            <Dialog open={isPaidParkingDialogOpen} onOpenChange={setIsPaidParkingDialogOpen}>
+            <h3 className="text-lg font-semibold">Maintenance & Repairs</h3>
+            <div className="flex gap-2">
+              <Dialog open={isDropdownConfigOpen} onOpenChange={setIsDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => setTempDropdownOptions(dropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure Dropdown Options</DialogTitle>
+                    <DialogDescription>
+                      Manage the dropdown options for maintenance form fields
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    {Object.entries(tempDropdownOptions).map(([category, options]) => (
+                      <div key={category} className="space-y-3">
+                        <h4 className="font-semibold capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {options.map((option, index) => (
+                            <div key={index} className="flex items-center gap-2 bg-secondary px-2 py-1 rounded">
+                              <span className="text-sm">{option}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-4 w-4 p-0"
+                                onClick={() => removeDropdownOption(category, option)}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add new ${category.replace(/([A-Z])/g, ' $1').toLowerCase()} option`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                addDropdownOption(category, e.currentTarget.value);
+                                e.currentTarget.value = '';
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              addDropdownOption(category, input.value);
+                              input.value = '';
+                            }}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleDropdownConfigCancel}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleDropdownConfigSave}>
+                      Save Changes
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="default" size="sm" onClick={() => {
-                  setEditingPaidParking(null);
-                  setPaidParkingForm({
-                    date: new Date().toISOString().split('T')[0],
-                    number_of_vehicles: 0,
-                    amount: 0
+                  setEditingMaintenance(null);
+                  setMaintenanceForm({
+                    date_reported: new Date().toISOString().split('T')[0],
+                    floor: "",
+                    issue_reporter: "",
+                    issue_type: "",
+                    material_affected: "",
+                    description: "",
+                    assigned_vendor: "",
+                    cost: 0,
+                    status: "Reported"
                   });
                 }}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Entry
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>{editingPaidParking ? 'Edit Paid Parking Entry' : 'Add New Paid Parking Entry'}</DialogTitle>
+                  <DialogTitle>{editingMaintenance ? 'Edit Maintenance Record' : 'Add Maintenance Record'}</DialogTitle>
                   <DialogDescription>
-                    {editingPaidParking ? 'Update the details for this paid parking entry' : 'Add a new record for paid parking.'}
+                    {editingMaintenance ? 'Update maintenance record information' : 'Add new maintenance record information'}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paid-parking-date" className="text-right">Date</Label>
-                    <Input id="paid-parking-date" type="date" value={paidParkingForm.date} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, date: e.target.value })} className="col-span-3" />
+                <div className="grid gap-4 py-4 max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date_reported">Date Reported</Label>
+                      <Input
+                        id="date_reported"
+                        type="date"
+                        value={maintenanceForm.date_reported}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, date_reported: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="floor">Floor</Label>
+                      <Select value={maintenanceForm.floor} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, floor: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select floor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.floor.map((floor) => (
+                            <SelectItem key={floor} value={floor}>{floor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paid-parking-vehicles" className="text-right">Number of Vehicles</Label>
-                    <Input id="paid-parking-vehicles" type="number" value={paidParkingForm.number_of_vehicles} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, number_of_vehicles: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="issue_reporter">Issue Reporter</Label>
+                      <Select value={maintenanceForm.issue_reporter} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_reporter: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select reporter" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.issueReporter.map((reporter) => (
+                            <SelectItem key={reporter} value={reporter}>{reporter}</SelectItem>
+                          ))}
+                          {tenantsList.map((tenant) => (
+                            <SelectItem key={tenant} value={tenant}>{tenant}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="issue_type">Issue Type</Label>
+                      <Select value={maintenanceForm.issue_type} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_type: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select issue type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.issueType.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paid-parking-amount" className="text-right">Amount</Label>
-                    <Input id="paid-parking-amount" type="number" value={paidParkingForm.amount} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, amount: parseFloat(e.target.value) || 0 })} className="col-span-3" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="material_affected">Material Affected</Label>
+                      <Select value={maintenanceForm.material_affected} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, material_affected: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select material" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.materialAffected.map((material) => (
+                            <SelectItem key={material} value={material}>{material}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assigned_vendor">Assigned Vendor</Label>
+                      <Select value={maintenanceForm.assigned_vendor} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, assigned_vendor: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vendor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.assignedVendor.map((vendor) => (
+                            <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={maintenanceForm.description}
+                      onChange={(e) => setMaintenanceForm({ ...maintenanceForm, description: e.target.value })}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cost">Cost</Label>
+                      <Input
+                        id="cost"
+                        type="number"
+                        value={maintenanceForm.cost}
+                        onChange={(e) => setMaintenanceForm({ ...maintenanceForm, cost: parseFloat(e.target.value) || 0 })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={maintenanceForm.status} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, status: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {dropdownOptions.status.map((status) => (
+                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" onClick={handlePaidParkingSubmit}>
-                    {editingPaidParking ? 'Update' : 'Create'}
+                  <Button type="submit" onClick={handleMaintenanceSubmit}>
+                    {editingMaintenance ? 'Update' : 'Create'}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -1649,243 +1813,38 @@ const AdminDataTables = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Number of Vehicles</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPaidParkingData.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className="font-medium">{entry.date}</TableCell>
-                  <TableCell>{entry.number_of_vehicles}</TableCell>
-                  <TableCell>${entry.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handlePaidParkingEdit(entry)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handlePaidParkingDelete(entry.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      );
-    }
-    
-    // Handle other mock tables
-    const data = mockData[selectedTable as keyof typeof mockData];
-    if (!data) return null;
-    const filteredData = data.filter((item: any) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
-  
-    // Handle maintenance table with real backend
-    if (selectedTable === 'maintenance') {
-      const filteredMaintenanceData = maintenanceData.filter((item) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
-      return (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Maintenance & Repairs Table</h3>
-            <div className="flex gap-2">
-              <Dialog open={isDropdownConfigOpen} onOpenChange={setIsDropdownConfigOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Configure Dropdowns</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Configure Maintenance Dropdowns</DialogTitle>
-                    <DialogDescription>
-                      Add or remove options for various dropdowns in the Maintenance & Repairs form.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    {Object.keys(tempDropdownOptions).map(category => (
-                      <div key={category} className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor={category} className="text-right capitalize">{category.replace(/([A-Z])/g, ' $1').trim()}</Label>
-                        <div className="col-span-3">
-                          <div className="flex flex-wrap gap-2">
-                            {tempDropdownOptions[category as keyof typeof tempDropdownOptions].map(option => (
-                              <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                                {option}
-                                <button
-                                  type="button"
-                                  onClick={() => removeDropdownOption(category, option)}
-                                  className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex mt-2">
-                            <Input
-                              placeholder={`Add new ${category.replace(/([A-Z])/g, ' $1').trim()}...`}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  addDropdownOption(category, e.currentTarget.value);
-                                  e.currentTarget.value = "";
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={handleDropdownConfigCancel}>Cancel</Button>
-                    <Button onClick={handleDropdownConfigSave}>Save changes</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              <Dialog open={isMaintenanceDialogOpen} onOpenChange={setIsMaintenanceDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingMaintenance(null); setMaintenanceForm({ date_reported: new Date().toISOString().split('T')[0], floor: "", issue_reporter: "", issue_type: "", material_affected: "", description: "", assigned_vendor: "", cost: 0, status: "Reported" }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingMaintenance ? 'Edit Maintenance Record' : 'Add Maintenance Record'}</DialogTitle>
-                    <DialogDescription>
-                      {editingMaintenance ? 'Update an existing maintenance and repair record' : 'Create a new maintenance and repair record.'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="date_reported" className="text-right">Date Reported</Label>
-                      <Input id="date_reported" type="date" value={maintenanceForm.date_reported} onChange={(e) => setMaintenanceForm({ ...maintenanceForm, date_reported: e.target.value })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="floor" className="text-right">Floor</Label>
-                      <Select value={maintenanceForm.floor} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, floor: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Floor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dropdownOptions.floor.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="issue_reporter" className="text-right">Issue Reporter</Label>
-                      <Select value={maintenanceForm.issue_reporter} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_reporter: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Reporter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dropdownOptions.issueReporter.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="issue_type" className="text-right">Issue Type</Label>
-                      <Select value={maintenanceForm.issue_type} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, issue_type: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Issue Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dropdownOptions.issueType.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="material_affected" className="text-right">Material Affected</Label>
-                      <Select value={maintenanceForm.material_affected} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, material_affected: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Material" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dropdownOptions.materialAffected.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="description" className="text-right">Description</Label>
-                      <Textarea id="description" value={maintenanceForm.description} onChange={(e) => setMaintenanceForm({ ...maintenanceForm, description: e.target.value })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="assigned_vendor" className="text-right">Assigned Vendor</Label>
-                      <Select value={maintenanceForm.assigned_vendor || ""} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, assigned_vendor: value === "unassigned" ? null : value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Vendor" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {dropdownOptions.assignedVendor.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="cost" className="text-right">Cost</Label>
-                      <Input id="cost" type="number" value={maintenanceForm.cost} onChange={(e) => setMaintenanceForm({ ...maintenanceForm, cost: parseFloat(e.target.value) || 0 })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="status" className="text-right">Status</Label>
-                      <Select value={maintenanceForm.status} onValueChange={(value) => setMaintenanceForm({ ...maintenanceForm, status: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {dropdownOptions.status.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit" onClick={handleMaintenanceSubmit}>
-                      {editingMaintenance ? 'Update' : 'Create'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Date Reported</TableHead>
                 <TableHead>Floor</TableHead>
+                <TableHead>Issue Reporter</TableHead>
                 <TableHead>Issue Type</TableHead>
+                <TableHead>Material Affected</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Assigned Vendor</TableHead>
                 <TableHead>Cost</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Completion Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredMaintenanceData.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.date_reported}</TableCell>
+                  <TableCell className="font-medium">{item.id.slice(0, 8)}...</TableCell>
+                  <TableCell>{new Date(item.date_reported).toLocaleDateString()}</TableCell>
                   <TableCell>{item.floor}</TableCell>
+                  <TableCell>{item.issue_reporter}</TableCell>
                   <TableCell>{item.issue_type}</TableCell>
-                  <TableCell>{item.description}</TableCell>
-                  <TableCell>{item.assigned_vendor || 'N/A'}</TableCell>
-                  <TableCell>{item.cost ? `$${item.cost}` : 'N/A'}</TableCell>
+                  <TableCell>{item.material_affected}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                  <TableCell>{item.assigned_vendor || '-'}</TableCell>
+                  <TableCell>${item.cost.toLocaleString()}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(item.status)}>
+                    <Badge className={getStatusColor(item.status)}>
                       {item.status}
                     </Badge>
                   </TableCell>
+                  <TableCell>{item.completion_date ? new Date(item.completion_date).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleMaintenanceEdit(item)}>
@@ -1903,53 +1862,65 @@ const AdminDataTables = () => {
         </div>
       );
     }
-  
+
     if (selectedTable === 'utilities') {
-      const filteredUtilitiesData = utilitiesData.filter((item) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
+      const filteredUtilities = utilitiesData.filter((utility) =>
+        utility.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        utility.date.includes(searchTerm.toLowerCase()) ||
+        utility.amount.toString().includes(searchTerm.toLowerCase())
+      );
+
       return (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Utilities Table</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Utilities Records</h3>
             <div className="flex gap-2">
               <Dialog open={isUtilitiesDropdownConfigOpen} onOpenChange={setIsUtilitiesDropdownConfigOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Configure Dropdowns</Button>
+                  <Button variant="outline" onClick={() => setTempUtilitiesDropdownOptions(utilitiesDropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Configure Utilities Dropdowns</DialogTitle>
+                    <DialogTitle>Configure Utilities Dropdown Options</DialogTitle>
                     <DialogDescription>
-                      Add or remove options for the "Type" dropdown.
+                      Manage the available options for utility types.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="type" className="text-right">Type</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempUtilitiesDropdownOptions.type.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempUtilitiesDropdownOptions(prev => ({ ...prev, type: prev.type.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new type..."
-                            onKeyDown={(e) => {
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Utility Types</Label>
+                      <div className="space-y-2">
+                        {tempUtilitiesDropdownOptions.type.map((option, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-sm">{option}</span>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => {
+                                setTempUtilitiesDropdownOptions(prev => ({
+                                  ...prev,
+                                  type: prev.type.filter(item => item !== option)
+                                }));
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Add new utility type"
+                            onKeyPress={(e) => {
                               if (e.key === 'Enter') {
-                                e.preventDefault();
                                 const newOption = e.currentTarget.value.trim();
                                 if (newOption && !tempUtilitiesDropdownOptions.type.includes(newOption)) {
-                                  setTempUtilitiesDropdownOptions(prev => ({ ...prev, type: [...prev.type, newOption] }));
-                                  e.currentTarget.value = "";
+                                  setTempUtilitiesDropdownOptions(prev => ({
+                                    ...prev,
+                                    type: [...prev.type, newOption]
+                                  }));
+                                  e.currentTarget.value = '';
                                 }
                               }
                             }}
@@ -1959,49 +1930,70 @@ const AdminDataTables = () => {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={handleUtilitiesDropdownConfigCancel}>Cancel</Button>
-                    <Button onClick={handleUtilitiesDropdownConfigSave}>Save changes</Button>
+                    <Button variant="outline" onClick={handleUtilitiesDropdownConfigCancel}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUtilitiesDropdownConfigSave}>
+                      Save Changes
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              
               <Dialog open={isUtilitiesDialogOpen} onOpenChange={setIsUtilitiesDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingUtility(null); setUtilitiesForm({ date: new Date().toISOString().split('T')[0], type: "", amount: 0 }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{editingUtility ? 'Edit Utility Record' : 'Add Utility Record'}</DialogTitle>
-                    <DialogDescription>
-                      {editingUtility ? 'Update an existing utility record' : 'Create a new utility record.'}
-                    </DialogDescription>
+                    <DialogTitle>
+                      {editingUtility ? 'Edit Utility Record' : 'Add New Utility Record'}
+                    </DialogTitle>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="date" className="text-right">Date</Label>
-                      <Input id="date" type="date" value={utilitiesForm.date} onChange={(e) => setUtilitiesForm({ ...utilitiesForm, date: e.target.value })} className="col-span-3" />
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="date">Date</Label>
+                      <Input
+                        id="date"
+                        type="date"
+                        value={utilitiesForm.date}
+                        onChange={(e) => setUtilitiesForm({ ...utilitiesForm, date: e.target.value })}
+                      />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="type" className="text-right">Type</Label>
+                    <div>
+                      <Label htmlFor="type">Type</Label>
                       <Select value={utilitiesForm.type} onValueChange={(value) => setUtilitiesForm({ ...utilitiesForm, type: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Type" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select utility type" />
                         </SelectTrigger>
                         <SelectContent>
                           {utilitiesDropdownOptions.type.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                            <SelectItem key={option} value={option}>
+                              {option}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="amount" className="text-right">Amount</Label>
-                      <Input id="amount" type="number" value={utilitiesForm.amount} onChange={(e) => setUtilitiesForm({ ...utilitiesForm, amount: parseFloat(e.target.value) || 0 })} className="col-span-3" />
+                    <div>
+                      <Label htmlFor="amount">Amount</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        step="0.01"
+                        value={utilitiesForm.amount}
+                        onChange={(e) => setUtilitiesForm({ ...utilitiesForm, amount: parseFloat(e.target.value) || 0 })}
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" onClick={handleUtilitiesSubmit}>
+                    <Button variant="outline" onClick={() => setIsUtilitiesDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleUtilitiesSubmit}>
                       {editingUtility ? 'Update' : 'Create'}
                     </Button>
                   </DialogFooter>
@@ -2009,9 +2001,11 @@ const AdminDataTables = () => {
               </Dialog>
             </div>
           </div>
+          
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Amount</TableHead>
@@ -2019,17 +2013,18 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUtilitiesData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>${item.amount.toFixed(2)}</TableCell>
+              {filteredUtilities.map((utility) => (
+                <TableRow key={utility.id}>
+                  <TableCell className="font-medium">{utility.id}</TableCell>
+                  <TableCell>{new Date(utility.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{utility.type}</TableCell>
+                  <TableCell>${utility.amount.toFixed(2)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesEdit(item)}>
+                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesEdit(utility)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesDelete(item.id)}>
+                      <Button variant="outline" size="sm" onClick={() => handleUtilitiesDelete(utility.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -2041,200 +2036,61 @@ const AdminDataTables = () => {
         </div>
       );
     }
-  
+
+
+
     if (selectedTable === 'feedback') {
-      const filteredFeedbackData = feedbackData.filter((item) =>
-        (item.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase())))
+      const filteredFeedback = feedbackData.filter(feedback =>
+        feedback.complaint_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.tenant_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        feedback.assigned_to?.toLowerCase().includes(searchTerm.toLowerCase())
       );
+
       return (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Feedback & Complaints Table</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
             <div className="flex gap-2">
-              <Dialog open={isFeedbackDropdownConfigOpen} onOpenChange={setIsFeedbackDropdownConfigOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Configure Dropdowns</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Configure Feedback & Complaints Dropdowns</DialogTitle>
-                    <DialogDescription>
-                      Add or remove options for various dropdowns in the form.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="type" className="text-right">Type</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempFeedbackDropdownOptions.type.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempFeedbackDropdownOptions(prev => ({ ...prev, type: prev.type.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new type..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempFeedbackDropdownOptions.type.includes(newOption)) {
-                                  setTempFeedbackDropdownOptions(prev => ({ ...prev, type: [...prev.type, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">Category</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempFeedbackDropdownOptions.category.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempFeedbackDropdownOptions(prev => ({ ...prev, category: prev.category.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new category..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempFeedbackDropdownOptions.category.includes(newOption)) {
-                                  setTempFeedbackDropdownOptions(prev => ({ ...prev, category: [...prev.category, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="status" className="text-right">Status</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempFeedbackDropdownOptions.status.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempFeedbackDropdownOptions(prev => ({ ...prev, status: prev.status.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new status..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempFeedbackDropdownOptions.status.includes(newOption)) {
-                                  setTempFeedbackDropdownOptions(prev => ({ ...prev, status: [...prev.status, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="assigned_to" className="text-right">Assigned To</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempFeedbackDropdownOptions.assigned_to.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempFeedbackDropdownOptions(prev => ({ ...prev, assigned_to: prev.assigned_to.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new assignee..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempFeedbackDropdownOptions.assigned_to.includes(newOption)) {
-                                  setTempFeedbackDropdownOptions(prev => ({ ...prev, assigned_to: [...prev.assigned_to, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={handleFeedbackDropdownConfigCancel}>Cancel</Button>
-                    <Button onClick={handleFeedbackDropdownConfigSave}>Save changes</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
               <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingFeedback(null); setFeedbackForm({ date: new Date().toISOString().split('T')[0], tenant_id: "none", type: "", category: "", description: "", status: "Under Review", assigned_to: "unassigned" }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Feedback Entry
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>{editingFeedback ? 'Edit Feedback Record' : 'Add Feedback Record'}</DialogTitle>
+                    <DialogTitle>{editingFeedback ? 'Edit' : 'Add'} Feedback & Complaint</DialogTitle>
                     <DialogDescription>
-                      {editingFeedback ? 'Update an existing feedback or complaint record' : 'Create a new feedback or complaint record.'}
+                      {editingFeedback ? 'Edit the feedback record' : 'Enter the feedback details below.'}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="date" className="text-right">Date</Label>
-                      <Input id="date" type="date" value={feedbackForm.date} onChange={(e) => setFeedbackForm({ ...feedbackForm, date: e.target.value })} className="col-span-3" />
+                      <Input
+                        id="date"
+                        type="date"
+                        value={feedbackForm.date}
+                        onChange={(e) => setFeedbackForm({ ...feedbackForm, date: e.target.value })}
+                        className="col-span-3"
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="tenant" className="text-right">Tenant</Label>
                       <Select value={feedbackForm.tenant_id} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, tenant_id: value })}>
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Tenant" />
+                          <SelectValue placeholder="Select tenant" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">N/A</SelectItem>
+                          <SelectItem value="none">None/Anonymous</SelectItem>
                           {tenants.map((tenant) => (
-                            <SelectItem key={tenant.id} value={tenant.id}>{tenant.name}</SelectItem>
+                            <SelectItem key={tenant.id} value={tenant.id}>
+                              {tenant.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -2243,11 +2099,13 @@ const AdminDataTables = () => {
                       <Label htmlFor="type" className="text-right">Type</Label>
                       <Select value={feedbackForm.type} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, type: value })}>
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Type" />
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.type.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          {feedbackDropdownOptions.type.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -2256,28 +2114,38 @@ const AdminDataTables = () => {
                       <Label htmlFor="category" className="text-right">Category</Label>
                       <Select value={feedbackForm.category} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, category: value })}>
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Category" />
+                          <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.category.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          {feedbackDropdownOptions.category.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="description" className="text-right">Description</Label>
-                      <Textarea id="description" value={feedbackForm.description} onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })} className="col-span-3" />
+                      <Textarea
+                        id="description"
+                        value={feedbackForm.description}
+                        onChange={(e) => setFeedbackForm({ ...feedbackForm, description: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Enter description..."
+                      />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="status" className="text-right">Status</Label>
                       <Select value={feedbackForm.status} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, status: value })}>
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Status" />
+                          <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.status.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          {feedbackDropdownOptions.status.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -2286,28 +2154,95 @@ const AdminDataTables = () => {
                       <Label htmlFor="assigned_to" className="text-right">Assigned To</Label>
                       <Select value={feedbackForm.assigned_to} onValueChange={(value) => setFeedbackForm({ ...feedbackForm, assigned_to: value })}>
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Assignee" />
+                          <SelectValue placeholder="Select assignee" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.assigned_to.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {feedbackDropdownOptions.assigned_to.map((assignee) => (
+                            <SelectItem key={assignee} value={assignee}>
+                              {assignee}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" onClick={handleFeedbackSubmit}>
-                      {editingFeedback ? 'Update' : 'Create'}
+                    <Button onClick={handleFeedbackSubmit}>
+                      {editingFeedback ? 'Update' : 'Add'} Feedback
                     </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isFeedbackDropdownConfigOpen} onOpenChange={setIsFeedbackDropdownConfigOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Configure Dropdowns</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure Feedback Dropdown Options</DialogTitle>
+                    <DialogDescription>
+                      Manage the dropdown options for feedback & complaints.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-4">
+                    {Object.entries(tempFeedbackDropdownOptions).map(([category, options]) => (
+                      <div key={category} className="space-y-2">
+                        <Label className="text-sm font-medium capitalize">{category.replace('_', ' ')}</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {options.map((option, index) => (
+                            <div key={index} className="flex items-center bg-secondary rounded-md px-3 py-1">
+                              <span className="text-sm">{option}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-2 h-4 w-4 p-0"
+                                onClick={() => {
+                                  const newOptions = { ...tempFeedbackDropdownOptions };
+                                  newOptions[category as keyof typeof newOptions] = newOptions[category as keyof typeof newOptions].filter((_, i) => i !== index);
+                                  setTempFeedbackDropdownOptions(newOptions);
+                                }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder={`Add new ${category.replace('_', ' ')}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const input = e.target as HTMLInputElement;
+                                if (input.value.trim()) {
+                                  const newOptions = { ...tempFeedbackDropdownOptions };
+                                  if (!newOptions[category as keyof typeof newOptions].includes(input.value.trim())) {
+                                    newOptions[category as keyof typeof newOptions] = [...newOptions[category as keyof typeof newOptions], input.value.trim()];
+                                    setTempFeedbackDropdownOptions(newOptions);
+                                  }
+                                  input.value = '';
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={handleFeedbackDropdownConfigCancel}>Cancel</Button>
+                    <Button onClick={handleFeedbackDropdownConfigSave}>Save Changes</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
+
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Tenant</TableHead>
                 <TableHead>Type</TableHead>
@@ -2319,32 +2254,33 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredFeedbackData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell>{item.tenant_name}</TableCell>
-                  <TableCell>{item.type}</TableCell>
-                  <TableCell>{item.category}</TableCell>
+              {filteredFeedback.map((feedback) => (
+                <TableRow key={feedback.id}>
+                  <TableCell className="font-medium">{feedback.complaint_id}</TableCell>
+                  <TableCell>{new Date(feedback.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{feedback.tenant_name}</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleFeedbackView(item)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <span className="truncate max-w-[150px]">{item.description}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusColor(item.status)}>
-                      {item.status}
+                    <Badge variant={feedback.type === 'Complaint' ? 'destructive' : feedback.type === 'Feedback' ? 'default' : 'secondary'}>
+                      {feedback.type}
                     </Badge>
                   </TableCell>
-                  <TableCell>{item.assigned_to || 'Unassigned'}</TableCell>
+                  <TableCell>{feedback.category}</TableCell>
+                  <TableCell className="max-w-xs truncate">{feedback.description}</TableCell>
+                  <TableCell>
+                    <Badge variant={feedback.status === 'Closed' ? 'default' : feedback.status === 'In Progress' ? 'secondary' : 'outline'}>
+                      {feedback.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{feedback.assigned_to || 'Unassigned'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleFeedbackEdit(item)}>
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackView(feedback)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackEdit(feedback)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleFeedbackDelete(item.id)}>
+                      <Button variant="outline" size="sm" onClick={() => handleFeedbackDelete(feedback.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -2353,206 +2289,250 @@ const AdminDataTables = () => {
               ))}
             </TableBody>
           </Table>
+
+          {/* View Feedback Dialog */}
           <Dialog open={isFeedbackViewDialogOpen} onOpenChange={setIsFeedbackViewDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Feedback & Complaint Details</DialogTitle>
                 <DialogDescription>
-                  Full details of the selected feedback or complaint.
+                  View complete details of the feedback/complaint record.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Date:</Label>
-                  <span className="col-span-3">{viewingFeedback?.date}</span>
+              {viewingFeedback && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="text-sm font-mono">{viewingFeedback.complaint_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                      <p className="text-sm">{new Date(viewingFeedback.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Tenant</Label>
+                      <p className="text-sm">{viewingFeedback.tenant_name || 'Anonymous'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                      <Badge variant={viewingFeedback.type === 'Complaint' ? 'destructive' : viewingFeedback.type === 'Feedback' ? 'default' : 'secondary'}>
+                        {viewingFeedback.type}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p className="text-sm">{viewingFeedback.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                      <Badge variant={viewingFeedback.status === 'Closed' ? 'default' : viewingFeedback.status === 'In Progress' ? 'secondary' : 'outline'}>
+                        {viewingFeedback.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Assigned To</Label>
+                    <p className="text-sm">{viewingFeedback.assigned_to || 'Unassigned'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap">{viewingFeedback.description}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Tenant:</Label>
-                  <span className="col-span-3">{viewingFeedback?.tenant_name || 'N/A'}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Type:</Label>
-                  <span className="col-span-3">{viewingFeedback?.type}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Category:</Label>
-                  <span className="col-span-3">{viewingFeedback?.category}</span>
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label className="text-right font-medium">Description:</Label>
-                  <span className="col-span-3 whitespace-pre-wrap">{viewingFeedback?.description}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Status:</Label>
-                  <span className="col-span-3">
-                    <Badge variant="outline" className={getStatusColor(viewingFeedback?.status || '')}>
-                      {viewingFeedback?.status}
-                    </Badge>
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Assigned To:</Label>
-                  <span className="col-span-3">{viewingFeedback?.assigned_to || 'Unassigned'}</span>
-                </div>
-              </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsFeedbackViewDialogOpen(false)}>
+                  Close
+                </Button>
+                {viewingFeedback && (
+                  <Button onClick={() => {
+                    setIsFeedbackViewDialogOpen(false);
+                    handleFeedbackEdit(viewingFeedback);
+                  }}>
+                    Edit Record
+                  </Button>
+                )}
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       );
     }
-  
+
+
     if (selectedTable === 'revenue') {
-      const filteredRevenueExpenseData = revenueExpenseData.filter((item) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
+      const filteredRevenueExpense = revenueExpenseData.filter(item =>
+        item.revenue_expense_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const getCategories = () => {
+        if (revenueExpenseForm.type === 'Revenue') {
+          return revenueExpenseDropdownOptions.revenueCategories;
+        } else if (revenueExpenseForm.type === 'Expense') {
+          return revenueExpenseDropdownOptions.expenseCategories;
+        }
+        return [];
+      };
+
       return (
-        <div className="space-y-6">
+        <div>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Revenue & Expenses Table</h3>
+            <h3 className="text-lg font-medium">Revenue & Expenses</h3>
             <div className="flex gap-2">
               <Dialog open={isRevenueExpenseDropdownConfigOpen} onOpenChange={setIsRevenueExpenseDropdownConfigOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Configure Dropdowns</Button>
+                  <Button variant="outline" size="sm">
+                    Configure Dropdowns
+                  </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
                     <DialogTitle>Configure Revenue & Expenses Dropdowns</DialogTitle>
                     <DialogDescription>
-                      Add or remove options for various dropdowns in the form.
+                      Manage the options available in dropdown menus for revenue and expense categories.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="revenue-categories" className="text-right">Revenue Categories</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempRevenueExpenseDropdownOptions.revenueCategories.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
+                  <div className="space-y-6">
+                    {[
+                      { key: 'type', label: 'Type Options' },
+                      { key: 'revenueCategories', label: 'Revenue Categories' },
+                      { key: 'expenseCategories', label: 'Expense Categories' }
+                    ].map(({ key, label }) => (
+                      <div key={key} className="space-y-3">
+                        <Label className="text-sm font-medium">{label}</Label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {tempRevenueExpenseDropdownOptions[key as keyof typeof tempRevenueExpenseDropdownOptions].map((option: string) => (
+                            <Badge key={option} variant="secondary" className="flex items-center gap-1">
                               {option}
                               <button
-                                type="button"
-                                onClick={() => setTempRevenueExpenseDropdownOptions(prev => ({ ...prev, revenueCategories: prev.revenueCategories.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
+                                onClick={() => {
+                                  setTempRevenueExpenseDropdownOptions(prev => ({
+                                    ...prev,
+                                    [key]: prev[key as keyof typeof prev].filter((item: string) => item !== option)
+                                  }));
+                                }}
+                                className="ml-1 hover:text-destructive"
                               >
-                                <Trash2 className="h-3 w-3" />
+                                ×
                               </button>
                             </Badge>
                           ))}
                         </div>
-                        <div className="flex mt-2">
+                        <div className="flex gap-2">
                           <Input
-                            placeholder="Add new category..."
+                            placeholder={`Add new ${label.toLowerCase()}`}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempRevenueExpenseDropdownOptions.revenueCategories.includes(newOption)) {
-                                  setTempRevenueExpenseDropdownOptions(prev => ({ ...prev, revenueCategories: [...prev.revenueCategories, newOption] }));
-                                  e.currentTarget.value = "";
+                                const input = e.target as HTMLInputElement;
+                                const newOption = input.value.trim();
+                                if (newOption && !tempRevenueExpenseDropdownOptions[key as keyof typeof tempRevenueExpenseDropdownOptions].includes(newOption)) {
+                                  setTempRevenueExpenseDropdownOptions(prev => ({
+                                    ...prev,
+                                    [key]: [...prev[key as keyof typeof prev], newOption]
+                                  }));
+                                  input.value = '';
                                 }
                               }
                             }}
                           />
                         </div>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="expense-categories" className="text-right">Expense Categories</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempRevenueExpenseDropdownOptions.expenseCategories.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempRevenueExpenseDropdownOptions(prev => ({ ...prev, expenseCategories: prev.expenseCategories.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
-                          <Input
-                            placeholder="Add new category..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempRevenueExpenseDropdownOptions.expenseCategories.includes(newOption)) {
-                                  setTempRevenueExpenseDropdownOptions(prev => ({ ...prev, expenseCategories: [...prev.expenseCategories, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={handleRevenueExpenseDropdownConfigCancel}>Cancel</Button>
-                    <Button onClick={handleRevenueExpenseDropdownConfigSave}>Save changes</Button>
+                    <Button onClick={handleRevenueExpenseDropdownConfigSave}>Save Changes</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
               <Dialog open={isRevenueExpenseDialogOpen} onOpenChange={setIsRevenueExpenseDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingRevenueExpense(null); setRevenueExpenseForm({ date: new Date().toISOString().split('T')[0], type: "", category: "", description: "", amount: 0 }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>{editingRevenueExpense ? 'Edit Record' : 'Add New Record'}</DialogTitle>
+                    <DialogTitle>{editingRevenueExpense ? 'Edit Revenue/Expense' : 'Add New Revenue/Expense'}</DialogTitle>
                     <DialogDescription>
-                      {editingRevenueExpense ? 'Update an existing revenue or expense record' : 'Create a new revenue or expense record.'}
+                      {editingRevenueExpense ? 'Update the revenue/expense record details.' : 'Enter the details for the new revenue/expense record.'}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="date" className="text-right">Date</Label>
-                      <Input id="date" type="date" value={revenueExpenseForm.date} onChange={(e) => setRevenueExpenseForm({ ...revenueExpenseForm, date: e.target.value })} className="col-span-3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={revenueExpenseForm.date}
+                          onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, date: e.target.value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="type">Type</Label>
+                        <Select value={revenueExpenseForm.type} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, type: value, category: ""})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {revenueExpenseDropdownOptions.type.map((type) => (
+                              <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="type" className="text-right">Type</Label>
-                      <Select value={revenueExpenseForm.type} onValueChange={(value) => setRevenueExpenseForm({ ...revenueExpenseForm, type: value, category: "" })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {revenueExpenseDropdownOptions.type.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Select value={revenueExpenseForm.category} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, category: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getCategories().map((category) => (
+                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="amount">Amount</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          value={revenueExpenseForm.amount}
+                          onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, amount: parseFloat(e.target.value) || 0})}
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">Category</Label>
-                      <Select value={revenueExpenseForm.category} onValueChange={(value) => setRevenueExpenseForm({ ...revenueExpenseForm, category: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {revenueExpenseForm.type === 'Revenue' && revenueExpenseDropdownOptions.revenueCategories.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                          {revenueExpenseForm.type === 'Expense' && revenueExpenseDropdownOptions.expenseCategories.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="description" className="text-right">Description</Label>
-                      <Textarea id="description" value={revenueExpenseForm.description} onChange={(e) => setRevenueExpenseForm({ ...revenueExpenseForm, description: e.target.value })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="amount" className="text-right">Amount</Label>
-                      <Input id="amount" type="number" value={revenueExpenseForm.amount} onChange={(e) => setRevenueExpenseForm({ ...revenueExpenseForm, amount: parseFloat(e.target.value) || 0 })} className="col-span-3" />
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        value={revenueExpenseForm.description}
+                        onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, description: e.target.value})}
+                        placeholder="Enter description..."
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" onClick={handleRevenueExpenseSubmit}>
+                    <Button variant="outline" onClick={() => setIsRevenueExpenseDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleRevenueExpenseSubmit}>
                       {editingRevenueExpense ? 'Update' : 'Create'}
                     </Button>
                   </DialogFooter>
@@ -2560,9 +2540,11 @@ const AdminDataTables = () => {
               </Dialog>
             </div>
           </div>
+
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
@@ -2572,22 +2554,25 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRevenueExpenseData.map((item) => (
+              {filteredRevenueExpense.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.date}</TableCell>
-                  <TableCell>{item.type}</TableCell>
+                  <TableCell className="font-medium">{item.revenue_expense_id}</TableCell>
+                  <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={item.type === 'Revenue' ? 'default' : 'secondary'}>
+                      {item.type}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{item.category}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.description}</TableCell>
+                  <TableCell className={`font-medium ${item.type === 'Revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                    ${item.amount.toFixed(2)}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleRevenueExpenseView(item)}>
+                      <Button variant="outline" size="sm" onClick={() => handleRevenueExpenseView(item)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <span className="truncate max-w-[150px]">{item.description}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>${item.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleRevenueExpenseEdit(item)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -2600,180 +2585,285 @@ const AdminDataTables = () => {
               ))}
             </TableBody>
           </Table>
+
+          {/* View Dialog */}
           <Dialog open={isRevenueExpenseViewDialogOpen} onOpenChange={setIsRevenueExpenseViewDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent>
               <DialogHeader>
-                <DialogTitle>Revenue & Expense Details</DialogTitle>
+                <DialogTitle>Revenue/Expense Details</DialogTitle>
                 <DialogDescription>
-                  Full details of the selected record.
+                  Detailed view of the revenue/expense record.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Date:</Label>
-                  <span className="col-span-3">{viewingRevenueExpense?.date}</span>
+              {viewingRevenueExpense && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="text-sm font-mono">{viewingRevenueExpense.revenue_expense_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Date</Label>
+                      <p className="text-sm">{new Date(viewingRevenueExpense.date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                      <Badge variant={viewingRevenueExpense.type === 'Revenue' ? 'default' : 'secondary'}>
+                        {viewingRevenueExpense.type}
+                      </Badge>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p className="text-sm">{viewingRevenueExpense.category}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Amount</Label>
+                    <p className={`text-lg font-medium ${viewingRevenueExpense.type === 'Revenue' ? 'text-green-600' : 'text-red-600'}`}>
+                      ${viewingRevenueExpense.amount.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                    <div className="mt-1 p-3 bg-muted/50 rounded-md">
+                      <p className="text-sm whitespace-pre-wrap">{viewingRevenueExpense.description}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Type:</Label>
-                  <span className="col-span-3">{viewingRevenueExpense?.type}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Category:</Label>
-                  <span className="col-span-3">{viewingRevenueExpense?.category}</span>
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label className="text-right font-medium">Description:</Label>
-                  <span className="col-span-3 whitespace-pre-wrap">{viewingRevenueExpense?.description}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Amount:</Label>
-                  <span className="col-span-3">${viewingRevenueExpense?.amount.toFixed(2)}</span>
-                </div>
-              </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRevenueExpenseViewDialogOpen(false)}>
+                  Close
+                </Button>
+                {viewingRevenueExpense && (
+                  <Button onClick={() => {
+                    setIsRevenueExpenseViewDialogOpen(false);
+                    handleRevenueExpenseEdit(viewingRevenueExpense);
+                  }}>
+                    Edit Record
+                  </Button>
+                )}
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       );
     }
-  
+
     if (selectedTable === 'assets') {
-      const filteredAssetInventoryData = assetInventoryData.filter((item) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
+      const filteredAssetInventory = assetInventoryData.filter(item =>
+        item.asset_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.asset_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.condition.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const isWarrantyActive = (month: number | null, year: number | null) => {
+        if (!month || !year) return false;
+        const warrantyDate = new Date(year, month - 1); // month is 0-indexed in Date
+        const currentDate = new Date();
+        return warrantyDate >= currentDate;
+      };
+
       return (
         <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Asset Inventory Table</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold">Asset Inventory</h3>
             <div className="flex gap-2">
               <Dialog open={isAssetInventoryDropdownConfigOpen} onOpenChange={setIsAssetInventoryDropdownConfigOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">Configure Dropdowns</Button>
+                  <Button variant="outline" onClick={() => setTempAssetInventoryDropdownOptions(assetInventoryDropdownOptions)}>
+                    Configure Dropdowns
+                  </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle>Configure Asset Inventory Dropdowns</DialogTitle>
                     <DialogDescription>
-                      Add or remove options for various dropdowns in the form.
+                      Manage dropdown options for asset inventory fields
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">Category</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempAssetInventoryDropdownOptions.category.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempAssetInventoryDropdownOptions(prev => ({ ...prev, category: prev.category.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium">Categories</Label>
+                      {tempAssetInventoryDropdownOptions.category.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2 mt-2">
                           <Input
-                            placeholder="Add new category..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempAssetInventoryDropdownOptions.category.includes(newOption)) {
-                                  setTempAssetInventoryDropdownOptions(prev => ({ ...prev, category: [...prev.category, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...tempAssetInventoryDropdownOptions.category];
+                              newOptions[index] = e.target.value;
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                category: newOptions
+                              });
                             }}
                           />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newOptions = tempAssetInventoryDropdownOptions.category.filter((_, i) => i !== index);
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                category: newOptions
+                              });
+                            }}
+                          >
+                            ×
+                          </Button>
                         </div>
-                      </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          setTempAssetInventoryDropdownOptions({
+                            ...tempAssetInventoryDropdownOptions,
+                            category: [...tempAssetInventoryDropdownOptions.category, 'New Category']
+                          });
+                        }}
+                      >
+                        Add Category
+                      </Button>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="condition" className="text-right">Condition</Label>
-                      <div className="col-span-3">
-                        <div className="flex flex-wrap gap-2">
-                          {tempAssetInventoryDropdownOptions.condition.map(option => (
-                            <Badge key={option} variant="secondary" className="pl-3 pr-2 py-1">
-                              {option}
-                              <button
-                                type="button"
-                                onClick={() => setTempAssetInventoryDropdownOptions(prev => ({ ...prev, condition: prev.condition.filter(o => o !== option) }))}
-                                className="ml-1 p-0.5 rounded-full hover:bg-muted"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex mt-2">
+                    <div>
+                      <Label className="text-sm font-medium">Conditions</Label>
+                      {tempAssetInventoryDropdownOptions.condition.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2 mt-2">
                           <Input
-                            placeholder="Add new condition..."
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const newOption = e.currentTarget.value.trim();
-                                if (newOption && !tempAssetInventoryDropdownOptions.condition.includes(newOption)) {
-                                  setTempAssetInventoryDropdownOptions(prev => ({ ...prev, condition: [...prev.condition, newOption] }));
-                                  e.currentTarget.value = "";
-                                }
-                              }
+                            value={option}
+                            onChange={(e) => {
+                              const newOptions = [...tempAssetInventoryDropdownOptions.condition];
+                              newOptions[index] = e.target.value;
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                condition: newOptions
+                              });
                             }}
                           />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newOptions = tempAssetInventoryDropdownOptions.condition.filter((_, i) => i !== index);
+                              setTempAssetInventoryDropdownOptions({
+                                ...tempAssetInventoryDropdownOptions,
+                                condition: newOptions
+                              });
+                            }}
+                          >
+                            ×
+                          </Button>
                         </div>
-                      </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => {
+                          setTempAssetInventoryDropdownOptions({
+                            ...tempAssetInventoryDropdownOptions,
+                            condition: [...tempAssetInventoryDropdownOptions.condition, 'New Condition']
+                          });
+                        }}
+                      >
+                        Add Condition
+                      </Button>
                     </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={handleAssetInventoryDropdownConfigCancel}>Cancel</Button>
-                    <Button onClick={handleAssetInventoryDropdownConfigSave}>Save changes</Button>
+                    <Button onClick={handleAssetInventoryDropdownConfigSave}>Save Changes</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
               <Dialog open={isAssetInventoryDialogOpen} onOpenChange={setIsAssetInventoryDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" onClick={() => { setEditingAssetInventory(null); setAssetInventoryForm({ asset_name: "", category: "", purchase_date: new Date().toISOString().split('T')[0], value: 0, condition: "Good", last_maintenance: "", next_maintenance: "", warranty_month: "", warranty_year: "" }); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  <Button onClick={() => {
+                    setEditingAssetInventory(null);
+                    setAssetInventoryForm({
+                      asset_name: "",
+                      category: "",
+                      purchase_date: new Date().toISOString().split('T')[0],
+                      value: 0,
+                      condition: "Good",
+                      last_maintenance: "",
+                      next_maintenance: "",
+                      warranty_month: "",
+                      warranty_year: ""
+                    });
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Entry
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-2xl">
                   <DialogHeader>
-                    <DialogTitle>{editingAssetInventory ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>
+                    <DialogTitle>{editingAssetInventory ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
                     <DialogDescription>
-                      {editingAssetInventory ? 'Update an existing asset record' : 'Create a new asset record.'}
+                      {editingAssetInventory ? 'Update asset information' : 'Add new asset to inventory'}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="asset_name" className="text-right">Asset Name</Label>
-                      <Input id="asset_name" value={assetInventoryForm.asset_name} onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, asset_name: e.target.value })} className="col-span-3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="asset_name">Asset Name</Label>
+                        <Input
+                          id="asset_name"
+                          value={assetInventoryForm.asset_name}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, asset_name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="category">Category</Label>
+                        <Select
+                          value={assetInventoryForm.category}
+                          onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, category: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assetInventoryDropdownOptions.category.map((option) => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">Category</Label>
-                      <Select value={assetInventoryForm.category} onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, category: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {assetInventoryDropdownOptions.category.map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="purchase_date">Purchase Date</Label>
+                        <Input
+                          id="purchase_date"
+                          type="date"
+                          value={assetInventoryForm.purchase_date}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, purchase_date: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="value">Value</Label>
+                        <Input
+                          id="value"
+                          type="number"
+                          value={assetInventoryForm.value}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, value: Number(e.target.value) })}
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="purchase_date" className="text-right">Purchase Date</Label>
-                      <Input id="purchase_date" type="date" value={assetInventoryForm.purchase_date} onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, purchase_date: e.target.value })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="value" className="text-right">Value</Label>
-                      <Input id="value" type="number" value={assetInventoryForm.value} onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, value: parseFloat(e.target.value) || 0 })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="condition" className="text-right">Condition</Label>
-                      <Select value={assetInventoryForm.condition} onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, condition: value })}>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select Condition" />
+                    <div>
+                      <Label htmlFor="condition">Condition</Label>
+                      <Select
+                        value={assetInventoryForm.condition}
+                        onValueChange={(value) => setAssetInventoryForm({ ...assetInventoryForm, condition: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select condition" />
                         </SelectTrigger>
                         <SelectContent>
                           {assetInventoryDropdownOptions.condition.map((option) => (
@@ -2782,28 +2872,47 @@ const AdminDataTables = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="last_maintenance" className="text-right">Last Maintenance</Label>
-                      <Input id="last_maintenance" type="date" value={assetInventoryForm.last_maintenance} onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, last_maintenance: e.target.value })} className="col-span-3" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="last_maintenance">Last Maintenance</Label>
+                        <Input
+                          id="last_maintenance"
+                          type="date"
+                          value={assetInventoryForm.last_maintenance}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, last_maintenance: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="next_maintenance">Next Maintenance</Label>
+                        <Input
+                          id="next_maintenance"
+                          type="date"
+                          value={assetInventoryForm.next_maintenance}
+                          onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, next_maintenance: e.target.value })}
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="next_maintenance" className="text-right">Next Maintenance</Label>
-                      <Input id="next_maintenance" type="date" value={assetInventoryForm.next_maintenance} onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, next_maintenance: e.target.value })} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="warranty" className="text-right">Warranty</Label>
-                      <div className="col-span-3 flex gap-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="warranty_month">Warranty Month</Label>
                         <Input
                           id="warranty_month"
                           type="number"
-                          placeholder="Month"
+                          min="1"
+                          max="12"
+                          placeholder="1-12"
                           value={assetInventoryForm.warranty_month}
                           onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, warranty_month: e.target.value })}
                         />
+                      </div>
+                      <div>
+                        <Label htmlFor="warranty_year">Warranty Year</Label>
                         <Input
                           id="warranty_year"
                           type="number"
-                          placeholder="Year"
+                          min="2020"
+                          max="2050"
+                          placeholder="e.g., 2025"
                           value={assetInventoryForm.warranty_year}
                           onChange={(e) => setAssetInventoryForm({ ...assetInventoryForm, warranty_year: e.target.value })}
                         />
@@ -2811,17 +2920,20 @@ const AdminDataTables = () => {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" onClick={handleAssetInventorySubmit}>
-                      {editingAssetInventory ? 'Update' : 'Create'}
+                    <Button variant="outline" onClick={() => setIsAssetInventoryDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAssetInventorySubmit}>
+                      {editingAssetInventory ? 'Update Asset' : 'Add Asset'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
+
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Asset Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Purchase Date</TableHead>
@@ -2834,30 +2946,36 @@ const AdminDataTables = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAssetInventoryData.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.asset_name}</TableCell>
-                  <TableCell>{item.category}</TableCell>
-                  <TableCell>{item.purchase_date}</TableCell>
-                  <TableCell>${item.value.toFixed(2)}</TableCell>
+              {filteredAssetInventory.map((asset) => (
+                <TableRow key={asset.id}>
+                  <TableCell className="font-medium">{asset.asset_id}</TableCell>
+                  <TableCell>{asset.asset_name}</TableCell>
+                  <TableCell>{asset.category}</TableCell>
+                  <TableCell>{new Date(asset.purchase_date).toLocaleDateString()}</TableCell>
+                  <TableCell>${asset.value.toLocaleString()}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(item.condition)}>
-                      {item.condition}
+                    <Badge className={getStatusColor(asset.condition)}>
+                      {asset.condition}
                     </Badge>
                   </TableCell>
-                  <TableCell>{item.last_maintenance || 'N/A'}</TableCell>
-                  <TableCell>{item.next_maintenance || 'N/A'}</TableCell>
+                  <TableCell>{asset.last_maintenance ? new Date(asset.last_maintenance).toLocaleDateString() : 'N/A'}</TableCell>
+                  <TableCell>{asset.next_maintenance ? new Date(asset.next_maintenance).toLocaleDateString() : 'N/A'}</TableCell>
                   <TableCell>
-                    {item.warranty_month && item.warranty_year
-                      ? `${item.warranty_month}/${item.warranty_year}`
-                      : 'N/A'}
+                    {asset.warranty_month && asset.warranty_year ? (
+                      <span className={isWarrantyActive(asset.warranty_month, asset.warranty_year) ? 'text-green-600' : 'text-red-600'}>
+                        {asset.warranty_month}/{asset.warranty_year}
+                      </span>
+                    ) : 'N/A'}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryEdit(item)}>
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryView(asset)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryEdit(asset)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryDelete(item.id)}>
+                      <Button variant="outline" size="sm" onClick={() => handleAssetInventoryDelete(asset.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -2866,134 +2984,137 @@ const AdminDataTables = () => {
               ))}
             </TableBody>
           </Table>
+
           <Dialog open={isAssetInventoryViewDialogOpen} onOpenChange={setIsAssetInventoryViewDialogOpen}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>Asset Details</DialogTitle>
-                <DialogDescription>
-                  Full details of the selected asset.
-                </DialogDescription>
+                <DialogDescription>Complete information for this asset</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Asset Name:</Label>
-                  <span className="col-span-3">{viewingAssetInventory?.asset_name}</span>
+              {viewingAssetInventory && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+                      <p className="font-medium">{viewingAssetInventory.asset_id}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Asset Name</Label>
+                      <p>{viewingAssetInventory.asset_name}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Category</Label>
+                      <p>{viewingAssetInventory.category}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Condition</Label>
+                      <Badge className={getStatusColor(viewingAssetInventory.condition)}>
+                        {viewingAssetInventory.condition}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Purchase Date</Label>
+                      <p>{new Date(viewingAssetInventory.purchase_date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Value</Label>
+                      <p>${viewingAssetInventory.value.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Last Maintenance</Label>
+                      <p>{viewingAssetInventory.last_maintenance ? new Date(viewingAssetInventory.last_maintenance).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Next Maintenance</Label>
+                      <p>{viewingAssetInventory.next_maintenance ? new Date(viewingAssetInventory.next_maintenance).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Warranty</Label>
+                    {viewingAssetInventory.warranty_month && viewingAssetInventory.warranty_year ? (
+                      <p className={isWarrantyActive(viewingAssetInventory.warranty_month, viewingAssetInventory.warranty_year) ? 'text-green-600' : 'text-red-600'}>
+                        {viewingAssetInventory.warranty_month}/{viewingAssetInventory.warranty_year} 
+                        {isWarrantyActive(viewingAssetInventory.warranty_month, viewingAssetInventory.warranty_year) ? ' (Active)' : ' (Expired)'}
+                      </p>
+                    ) : <p>No warranty information</p>}
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Category:</Label>
-                  <span className="col-span-3">{viewingAssetInventory?.category}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Purchase Date:</Label>
-                  <span className="col-span-3">{viewingAssetInventory?.purchase_date}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Value:</Label>
-                  <span className="col-span-3">${viewingAssetInventory?.value.toFixed(2)}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Condition:</Label>
-                  <span className="col-span-3">
-                    <Badge variant="outline" className={getStatusColor(viewingAssetInventory?.condition || '')}>
-                      {viewingAssetInventory?.condition}
-                    </Badge>
-                  </span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Last Maintenance:</Label>
-                  <span className="col-span-3">{viewingAssetInventory?.last_maintenance || 'N/A'}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Next Maintenance:</Label>
-                  <span className="col-span-3">{viewingAssetInventory?.next_maintenance || 'N/A'}</span>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right font-medium">Warranty:</Label>
-                  <span className="col-span-3">
-                    {viewingAssetInventory?.warranty_month && viewingAssetInventory?.warranty_year
-                      ? `${viewingAssetInventory?.warranty_month}/${viewingAssetInventory?.warranty_year}`
-                      : 'N/A'}
-                  </span>
-                </div>
-              </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAssetInventoryViewDialogOpen(false)}>Close</Button>
+                {viewingAssetInventory && (
+                  <Button onClick={() => {
+                    setIsAssetInventoryViewDialogOpen(false);
+                    handleAssetInventoryEdit(viewingAssetInventory);
+                  }}>
+                    Edit Asset
+                  </Button>
+                )}
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       );
     }
 
-    const filteredData = data.filter((item: any) => Object.values(item).some(value => value?.toString().toLowerCase().includes(searchTerm.toLowerCase()) ) );
-    
-    // Default table rendering
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {Object.keys(data[0] || {}).map(key => (
-              <TableHead key={key} className="capitalize">
-                {key.replace(/([A-Z])/g, ' $1').trim()}
-              </TableHead>
-            ))}
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredData.map((item: any, index: number) => (
-            <TableRow key={index}>
-              {Object.values(item).map((value, i) => (
-                <TableCell key={i}>{value?.toString()}</TableCell>
-              ))}
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" disabled>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
+    return null;
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col md:flex-row justify-between md:items-center">
-        <div>
-          <CardTitle>Admin Data Tables</CardTitle>
-          <CardDescription>
-            Manage various data tables for building administration.
-          </CardDescription>
-        </div>
-        <div className="flex flex-col md:flex-row gap-2 mt-4 md:mt-0 w-full md:w-auto">
-          <Select value={selectedTable} onValueChange={setSelectedTable}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Select a table" />
-            </SelectTrigger>
-            <SelectContent>
-              {tables.map(table => (
-                <SelectItem key={table.value} value={table.value}>
-                  {table.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full md:w-[200px]"
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {renderTable()}
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Data Tables</h1>
+        <p className="text-muted-foreground">
+          Manage and view all your building data in organized tables.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Table Selector</CardTitle>
+          <CardDescription>Choose which data table you want to view and manage</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 mb-4">
+            <Select value={selectedTable} onValueChange={setSelectedTable}>
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select a table to view" />
+              </SelectTrigger>
+              <SelectContent>
+                {tables.map((table) => (
+                  <SelectItem key={table.value} value={table.value}>
+                    {table.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {selectedTable && (
+              <Input
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-xs"
+              />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedTable && (
+        <Card>
+          <CardContent className="p-6">
+            {renderTable()}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 
