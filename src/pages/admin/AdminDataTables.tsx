@@ -92,6 +92,12 @@ type AssetInventory = {
   warranty_month: number | null;
   warranty_year: number | null;
 };
+type PaidParking = {
+  id: string;
+  date: string;
+  number_of_vehicles: number;
+  amount: number;
+};
 
 
 const AdminDataTables = () => {
@@ -119,6 +125,16 @@ const AdminDataTables = () => {
   
   // State for asset inventory data
   const [assetInventoryData, setAssetInventoryData] = useState<AssetInventory[]>([]);
+    // State for Paid Parking data
+  const [paidParkingData, setPaidParkingData] = useState<PaidParking[]>([
+    { id: "1", date: "2024-08-15", number_of_vehicles: 50, amount: 150 },
+    { id: "2", date: "2024-08-14", number_of_vehicles: 45, amount: 135 },
+    { id: "3", date: "2024-08-13", number_of_vehicles: 60, amount: 180 },
+    { id: "4", date: "2024-08-12", number_of_vehicles: 55, amount: 165 },
+    { id: "5", date: "2024-08-11", number_of_vehicles: 48, amount: 144 },
+    { id: "6", date: "2024-08-10", number_of_vehicles: 62, amount: 186 },
+    { id: "7", date: "2024-08-09", number_of_vehicles: 53, amount: 159 },
+  ]);
   
   
   // Dialog states
@@ -132,6 +148,7 @@ const AdminDataTables = () => {
   const [isRevenueExpenseViewDialogOpen, setIsRevenueExpenseViewDialogOpen] = useState(false);
   const [isAssetInventoryDialogOpen, setIsAssetInventoryDialogOpen] = useState(false);
   const [isAssetInventoryViewDialogOpen, setIsAssetInventoryViewDialogOpen] = useState(false);
+  const [isPaidParkingDialogOpen, setIsPaidParkingDialogOpen] = useState(false);
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
   const [isUtilitiesDropdownConfigOpen, setIsUtilitiesDropdownConfigOpen] = useState(false);
@@ -148,6 +165,7 @@ const AdminDataTables = () => {
   const [viewingRevenueExpense, setViewingRevenueExpense] = useState<RevenueExpense | null>(null);
   const [editingAssetInventory, setEditingAssetInventory] = useState<AssetInventory | null>(null);
   const [viewingAssetInventory, setViewingAssetInventory] = useState<AssetInventory | null>(null);
+  const [editingPaidParking, setEditingPaidParking] = useState<PaidParking | null>(null);
   
   
   // Form states
@@ -210,6 +228,11 @@ const AdminDataTables = () => {
     warranty_month: "",
     warranty_year: ""
   });
+   const [paidParkingForm, setPaidParkingForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    number_of_vehicles: 0,
+    amount: 0
+  });
 
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
@@ -264,6 +287,7 @@ const AdminDataTables = () => {
     { value: "feedback", label: "Feedback & Complaints Table" },
     { value: "revenue", label: "Revenue & Expenses Table" },
     { value: "assets", label: "Asset Inventory Table" }
+    { value: "paidParking", label: "Paid Parking" }
   ];
 
   // Fetch data functions
@@ -420,7 +444,21 @@ const AdminDataTables = () => {
     
     setAssetInventoryData(data || []);
   };
-
+  // Fetch paid parking data
+  const fetchPaidParkingData = async () => {
+    const { data, error } = await supabase
+      .from('paid_parking')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast.error('Failed to fetch paid parking data');
+      return;
+    }
+    
+    setPaidParkingData(data || []);
+  };
+  
 
   useEffect(() => {
     if (selectedTable === 'occupancy') {
@@ -439,6 +477,8 @@ const AdminDataTables = () => {
       fetchRevenueExpenseData();
     } else if (selectedTable === 'assets') {
       fetchAssetInventoryData();
+    } else if (selectedTable === 'paidParking') {
+      fetchPaidParkingData();
     }
   }, [selectedTable]);
 
@@ -979,7 +1019,71 @@ const AdminDataTables = () => {
     setViewingAssetInventory(asset);
     setIsAssetInventoryViewDialogOpen(true);
   };
+  // CRUD functions for paid parking
+  const handlePaidParkingSubmit = async () => {
+    if (editingPaidParking) {
+      // Update existing paid parking
+      const { error } = await supabase
+        .from('paid_parking')
+        .update(paidParkingForm)
+        .eq('id', editingPaidParking.id);
+      
+      if (error) {
+        toast.error('Failed to update paid parking record');
+        return;
+      }
+      
+      toast.success('Paid parking record updated successfully');
+    } else {
+      // Create new paid parking
+      const { error } = await supabase
+        .from('paid_parking')
+        .insert([paidParkingForm]);
+      
+      if (error) {
+        toast.error('Failed to create paid parking record');
+        return;
+      }
+      
+      toast.success('Paid parking record created successfully');
+    }
+    
+    setIsPaidParkingDialogOpen(false);
+    setEditingPaidParking(null);
+    setPaidParkingForm({
+      date: new Date().toISOString().split('T')[0],
+      number_of_vehicles: 0,
+      amount: 0
+    });
+    fetchPaidParkingData();
+  };
 
+  const handlePaidParkingEdit = (paidParking: PaidParking) => {
+    setEditingPaidParking(paidParking);
+    setPaidParkingForm({
+      date: paidParking.date,
+      number_of_vehicles: paidParking.number_of_vehicles,
+      amount: paidParking.amount
+    });
+    setIsPaidParkingDialogOpen(true);
+  };
+
+  const handlePaidParkingDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('paid_parking')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete paid parking record');
+      return;
+    }
+    
+    toast.success('Paid parking record deleted successfully');
+    fetchPaidParkingData();
+  };
+
+  
 
   // Dropdown configuration functions
   const handleDropdownConfigSave = () => {
@@ -1565,7 +1669,90 @@ const AdminDataTables = () => {
         </div>
       );
     }
-
+    
+    if (selectedTable === 'paidParking') {
+      const filteredPaidParkingData = paidParkingData.filter((item) =>
+        Object.values(item).some(value =>
+          value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+      return (
+        <div className="space-y-6">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Paid Parking</h3>
+              <Dialog open={isPaidParkingDialogOpen} onOpenChange={setIsPaidParkingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="default" size="sm" onClick={() => {
+                    setEditingPaidParking(null);
+                    setPaidParkingForm({ date: new Date().toISOString().split('T')[0], number_of_vehicles: 0, amount: 0 });
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingPaidParking ? 'Edit Paid Parking' : 'Add Paid Parking Entry'}</DialogTitle>
+                    <DialogDescription>
+                      {editingPaidParking ? 'Update paid parking information' : 'Add a new paid parking entry'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="date" className="text-right">Date</Label>
+                      <Input id="date" type="date" value={paidParkingForm.date} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, date: e.target.value })} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="vehicles" className="text-right">Number of Vehicles</Label>
+                      <Input id="vehicles" type="number" value={paidParkingForm.number_of_vehicles} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, number_of_vehicles: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="amount" className="text-right">Amount</Label>
+                      <Input id="amount" type="number" value={paidParkingForm.amount} onChange={(e) => setPaidParkingForm({ ...paidParkingForm, amount: parseInt(e.target.value) || 0 })} className="col-span-3" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" onClick={handlePaidParkingSubmit}>
+                      {editingPaidParking ? 'Update' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Number of Vehicles</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPaidParkingData.map((entry) => (
+                  <TableRow key={entry.id}>
+                    <TableCell className="font-medium">{entry.date}</TableCell>
+                    <TableCell>{entry.number_of_vehicles}</TableCell>
+                    <TableCell>${entry.amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePaidParkingEdit(entry)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePaidParkingDelete(entry.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      );
+    }
+    
     // Handle other mock tables
     const data = mockData[selectedTable as keyof typeof mockData];
     if (!data) return null;
