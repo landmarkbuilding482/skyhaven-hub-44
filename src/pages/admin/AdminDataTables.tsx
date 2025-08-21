@@ -93,17 +93,6 @@ type AssetInventory = {
   warranty_year: number | null;
 };
 
-type ParkingPaymentRecord = {
-  id: string;
-  date: string;
-  vehicle_license: string;
-  duration_hours: number;
-  rate_per_hour: number;
-  total_amount: number;
-  payment_method: string;
-  status: string;
-};
-
 
 
 const AdminDataTables = () => {
@@ -131,90 +120,6 @@ const AdminDataTables = () => {
   
   // State for asset inventory data
   const [assetInventoryData, setAssetInventoryData] = useState<AssetInventory[]>([]);
-  
-  // State for parking payment records (frontend only)
-  const [parkingPaymentData] = useState<ParkingPaymentRecord[]>([
-    {
-      id: '1',
-      date: '2024-01-20',
-      vehicle_license: 'ABC-123',
-      duration_hours: 2,
-      rate_per_hour: 5.00,
-      total_amount: 10.00,
-      payment_method: 'Credit Card',
-      status: 'Paid'
-    },
-    {
-      id: '2',
-      date: '2024-01-20',
-      vehicle_license: 'XYZ-789',
-      duration_hours: 4,
-      rate_per_hour: 5.00,
-      total_amount: 20.00,
-      payment_method: 'Cash',
-      status: 'Paid'
-    },
-    {
-      id: '3',
-      date: '2024-01-19',
-      vehicle_license: 'DEF-456',
-      duration_hours: 1,
-      rate_per_hour: 5.00,
-      total_amount: 5.00,
-      payment_method: 'Mobile App',
-      status: 'Paid'
-    },
-    {
-      id: '4',
-      date: '2024-01-19',
-      vehicle_license: 'GHI-321',
-      duration_hours: 6,
-      rate_per_hour: 5.00,
-      total_amount: 30.00,
-      payment_method: 'Credit Card',
-      status: 'Paid'
-    },
-    {
-      id: '5',
-      date: '2024-01-18',
-      vehicle_license: 'JKL-654',
-      duration_hours: 3,
-      rate_per_hour: 5.00,
-      total_amount: 15.00,
-      payment_method: 'Debit Card',
-      status: 'Pending'
-    },
-    {
-      id: '6',
-      date: '2024-01-18',
-      vehicle_license: 'MNO-987',
-      duration_hours: 8,
-      rate_per_hour: 5.00,
-      total_amount: 40.00,
-      payment_method: 'Cash',
-      status: 'Paid'
-    },
-    {
-      id: '7',
-      date: '2024-01-17',
-      vehicle_license: 'PQR-246',
-      duration_hours: 2,
-      rate_per_hour: 5.00,
-      total_amount: 10.00,
-      payment_method: 'Mobile App',
-      status: 'Failed'
-    },
-    {
-      id: '8',
-      date: '2024-01-17',
-      vehicle_license: 'STU-135',
-      duration_hours: 5,
-      rate_per_hour: 5.00,
-      total_amount: 25.00,
-      payment_method: 'Credit Card',
-      status: 'Paid'
-    }
-  ]);
   
   
   
@@ -363,8 +268,7 @@ const AdminDataTables = () => {
     { value: "utilities", label: "Utilities Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
     { value: "revenue", label: "Revenue & Expenses Table" },
-    { value: "assets", label: "Asset Inventory Table" },
-    { value: "parkingPayments", label: "Parking Payment Records" }
+    { value: "assets", label: "Asset Inventory Table" }
   ];
 
   // Fetch data functions
@@ -3166,66 +3070,6 @@ const AdminDataTables = () => {
       );
     }
 
-    if (selectedTable === 'parkingPayments') {
-      const filteredParkingPayments = parkingPaymentData.filter(payment =>
-        payment.date.includes(searchTerm) ||
-        payment.vehicle_license.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.payment_method.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-      const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-          case 'paid':
-            return 'bg-green-100 text-green-800';
-          case 'pending':
-            return 'bg-yellow-100 text-yellow-800';
-          case 'failed':
-            return 'bg-red-100 text-red-800';
-          default:
-            return 'bg-gray-100 text-gray-800';
-        }
-      };
-
-      return (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold tracking-tight">Parking Payment Records</h2>
-          </div>
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Vehicle License</TableHead>
-                <TableHead>Duration (Hours)</TableHead>
-                <TableHead>Rate/Hour</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredParkingPayments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-medium">{new Date(payment.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{payment.vehicle_license}</TableCell>
-                  <TableCell>{payment.duration_hours}</TableCell>
-                  <TableCell>${payment.rate_per_hour.toFixed(2)}</TableCell>
-                  <TableCell>${payment.total_amount.toFixed(2)}</TableCell>
-                  <TableCell>{payment.payment_method}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(payment.status)}>
-                      {payment.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      );
-    }
 
     return null;
   };
