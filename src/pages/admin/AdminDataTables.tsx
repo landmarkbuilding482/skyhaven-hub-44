@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar"; // Assuming this is also a local component
@@ -78,16 +78,25 @@ const DatePicker = ({ date, onDateChange, className }) => (
 
 const PaidParkingTable = ({ data, onEdit, onDelete, onAdd }) => {
   const [open, setOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, date: "", number_of_vehicles: 0, amount: 0 });
+  const [recordToDelete, setRecordToDelete] = useState(null);
 
   const handleEditClick = (row) => {
     setFormData(row);
     setOpen(true);
   };
 
-  const handleDeleteClick = async (id) => {
-    if (window.confirm("Are you sure you want to delete this record?")) {
-      await onDelete(id);
+  const handleDeleteClick = (id) => {
+    setRecordToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (recordToDelete) {
+      await onDelete(recordToDelete);
+      setRecordToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -187,6 +196,25 @@ const PaidParkingTable = ({ data, onEdit, onDelete, onAdd }) => {
           </div>
           <DialogFooter>
             <Button onClick={handleSave}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this record? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
