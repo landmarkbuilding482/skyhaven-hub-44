@@ -286,7 +286,7 @@ const AdminDataTables = () => {
     { value: "utilities", label: "Utilities Table" },
     { value: "feedback", label: "Feedback & Complaints Table" },
     { value: "revenue", label: "Revenue & Expenses Table" },
-    { value: "assets", label: "Asset Inventory Table" }
+    { value: "assets", label: "Asset Inventory Table" },
     { value: "paidParking", label: "Paid Parking" }
   ];
 
