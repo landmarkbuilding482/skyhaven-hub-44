@@ -442,17 +442,16 @@ const AdminDataTables = () => {
 
   // Fetch Paid Parking data
   const fetchPaidParkingData = async () => {
-    const { data, error } = await supabase
-      .from('paid_parking')
-      .select('*')
-      .order('date', { ascending: false });
-    
-    if (error) {
-      toast.error('Failed to fetch paid parking data');
-      return;
-    }
-    
-    setPaidParkingData(data || []);
+    const mockData = [
+      { id: "PP007", date: "2024-08-21", number_of_vehicles: 55, amount: 275 },
+      { id: "PP006", date: "2024-08-20", number_of_vehicles: 62, amount: 310 },
+      { id: "PP005", date: "2024-08-19", number_of_vehicles: 48, amount: 240 },
+      { id: "PP004", date: "2024-08-18", number_of_vehicles: 71, amount: 355 },
+      { id: "PP003", date: "2024-08-17", number_of_vehicles: 80, amount: 400 },
+      { id: "PP002", date: "2024-08-16", number_of_vehicles: 59, amount: 295 },
+      { id: "PP001", date: "2024-08-15", number_of_vehicles: 65, amount: 325 },
+    ];
+    setPaidParkingData(mockData);
   };
 
   useEffect(() => {
