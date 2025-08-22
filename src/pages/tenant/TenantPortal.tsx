@@ -1,19 +1,6 @@
 import { Button } from "@/components/ui/button";
 import TenantData from "./TenantData";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-
-<Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
-  <DialogTrigger asChild>
-    <Button>
-      <Plus className="h-4 w-4 mr-2" />
-      Add Feedback Entry
-    </Button>
-  </DialogTrigger>
-</Dialog>
-
 
 const TenantPortal = () => {
   const { user, logout } = useAuth();
