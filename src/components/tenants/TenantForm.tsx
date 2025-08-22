@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 interface Tenant {
   id: string;
   tenant_id: string;
@@ -21,14 +20,16 @@ interface Tenant {
   first_payment_date: string | null;
   status: string;
 }
-
 interface TenantFormProps {
   tenant?: Tenant | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
-
-const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
+const TenantForm = ({
+  tenant,
+  onSuccess,
+  onCancel
+}: TenantFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
     floor: [] as string[],
@@ -42,8 +43,9 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
     status: 'active'
   });
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   useEffect(() => {
     if (tenant) {
       setFormData({
@@ -60,138 +62,107 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
       });
     }
   }, [tenant]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
         monthly_rent: parseFloat(formData.monthly_rent),
         phone_number: formData.phone_number || null,
         email: formData.email || null,
-        first_payment_date: formData.first_payment_date || null,
+        first_payment_date: formData.first_payment_date || null
       };
-
       if (tenant) {
         // Update existing tenant
-        const { error } = await supabase
-          .from('tenants')
-          .update(payload)
-          .eq('id', tenant.id);
-
+        const {
+          error
+        } = await supabase.from('tenants').update(payload).eq('id', tenant.id);
         if (error) throw error;
-
         toast({
           title: "Success",
-          description: "Tenant updated successfully",
+          description: "Tenant updated successfully"
         });
       } else {
         // Generate a unique tenant ID for new tenant
-        const { data: existingTenants } = await supabase
-          .from('tenants')
-          .select('tenant_id')
-          .order('tenant_id', { ascending: false })
-          .limit(1);
-
+        const {
+          data: existingTenants
+        } = await supabase.from('tenants').select('tenant_id').order('tenant_id', {
+          ascending: false
+        }).limit(1);
         let nextId = 1001;
         if (existingTenants && existingTenants.length > 0) {
           const lastId = existingTenants[0].tenant_id;
           const lastNumber = parseInt(lastId.split('-')[1]);
           nextId = lastNumber + 1;
         }
-
         const firstFloor = payload.floor[0] || '1';
         const floorPrefix = firstFloor === 'G' ? 'G' : firstFloor === 'B' ? 'B' : firstFloor;
         const tenantId = `LMT-${floorPrefix}${nextId.toString().padStart(3, '0')}`;
 
         // Create new tenant
-        const { error } = await supabase
-          .from('tenants')
-          .insert([{ ...payload, tenant_id: tenantId }]);
-
+        const {
+          error
+        } = await supabase.from('tenants').insert([{
+          ...payload,
+          tenant_id: tenantId
+        }]);
         if (error) throw error;
-
         toast({
           title: "Success",
-          description: "Tenant created successfully",
+          description: "Tenant created successfully"
         });
       }
-
       onSuccess();
     } catch (error) {
       console.error('Error saving tenant:', error);
       toast({
         title: "Error",
         description: "Failed to save tenant",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleChange = (field: string, value: string | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
-
   const handleFloorToggle = (floor: string) => {
     setFormData(prev => ({
       ...prev,
-      floor: prev.floor.includes(floor)
-        ? prev.floor.filter(f => f !== floor)
-        : [...prev.floor, floor]
+      floor: prev.floor.includes(floor) ? prev.floor.filter(f => f !== floor) : [...prev.floor, floor]
     }));
   };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{tenant ? 'Edit Tenant' : 'Add New Tenant'}</CardTitle>
-        <CardDescription>
-          {tenant ? 'Update tenant information' : 'Enter tenant details to add them to the system'}
-        </CardDescription>
-      </CardHeader>
+  return <Card>
+      
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Tenant Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                required
-              />
+              <Input id="name" value={formData.name} onChange={e => handleChange('name', e.target.value)} required />
             </div>
 
             <div className="space-y-2">
               <Label>Floors *</Label>
               <div className="grid grid-cols-4 gap-2">
-                {['8', '7', '6', '5', '4', '3', '2', '1', 'G', 'B'].map((floor) => (
-                  <div key={floor} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={`floor-${floor}`}
-                      checked={formData.floor.includes(floor)}
-                      onChange={() => handleFloorToggle(floor)}
-                      className="rounded border-input"
-                    />
+                {['8', '7', '6', '5', '4', '3', '2', '1', 'G', 'B'].map(floor => <div key={floor} className="flex items-center space-x-2 mx-0">
+                    <input type="checkbox" id={`floor-${floor}`} checked={formData.floor.includes(floor)} onChange={() => handleFloorToggle(floor)} className="rounded border-input" />
                     <Label htmlFor={`floor-${floor}`} className="text-sm">
                       {floor === 'G' ? 'Ground' : floor === 'B' ? 'Basement' : `Floor ${floor}`}
                     </Label>
-                  </div>
-                ))}
+                  </div>)}
               </div>
-              {formData.floor.length === 0 && (
-                <p className="text-sm text-destructive">Please select at least one floor</p>
-              )}
+              {formData.floor.length === 0 && <p className="text-sm text-destructive">Please select at least one floor</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="space_type">Space Type *</Label>
-              <Select value={formData.space_type} onValueChange={(value) => handleChange('space_type', value)}>
+              <Select value={formData.space_type} onValueChange={value => handleChange('space_type', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select space type" />
                 </SelectTrigger>
@@ -207,70 +178,37 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="business_type">Business Type *</Label>
-              <Input
-                id="business_type"
-                value={formData.business_type}
-                onChange={(e) => handleChange('business_type', e.target.value)}
-                required
-              />
+              <Input id="business_type" value={formData.business_type} onChange={e => handleChange('business_type', e.target.value)} required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="registration_date">Registration Date *</Label>
-              <Input
-                id="registration_date"
-                type="date"
-                value={formData.registration_date}
-                onChange={(e) => handleChange('registration_date', e.target.value)}
-                required
-              />
+              <Input id="registration_date" type="date" value={formData.registration_date} onChange={e => handleChange('registration_date', e.target.value)} required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="monthly_rent">Monthly Rent ($) *</Label>
-              <Input
-                id="monthly_rent"
-                type="number"
-                step="0.01"
-                value={formData.monthly_rent}
-                onChange={(e) => handleChange('monthly_rent', e.target.value)}
-                required
-              />
+              <Input id="monthly_rent" type="number" step="0.01" value={formData.monthly_rent} onChange={e => handleChange('monthly_rent', e.target.value)} required />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                type="tel"
-                value={formData.phone_number}
-                onChange={(e) => handleChange('phone_number', e.target.value)}
-              />
+              <Input id="phone_number" type="tel" value={formData.phone_number} onChange={e => handleChange('phone_number', e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-              />
+              <Input id="email" type="email" value={formData.email} onChange={e => handleChange('email', e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="first_payment_date">First Payment Date</Label>
-              <Input
-                id="first_payment_date"
-                type="date"
-                value={formData.first_payment_date}
-                onChange={(e) => handleChange('first_payment_date', e.target.value)}
-              />
+              <Input id="first_payment_date" type="date" value={formData.first_payment_date} onChange={e => handleChange('first_payment_date', e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="status">Status *</Label>
-              <Select value={formData.status} onValueChange={(value) => handleChange('status', value)}>
+              <Select value={formData.status} onValueChange={value => handleChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -285,7 +223,7 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
 
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : (tenant ? 'Update Tenant' : 'Add Tenant')}
+              {loading ? 'Saving...' : tenant ? 'Update Tenant' : 'Add Tenant'}
             </Button>
             <Button type="button" variant="outline" onClick={onCancel}>
               Cancel
@@ -293,8 +231,6 @@ const TenantForm = ({ tenant, onSuccess, onCancel }: TenantFormProps) => {
           </div>
         </form>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default TenantForm;
