@@ -1,17 +1,38 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Building, Home, Info, Mail, Users, Settings } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Building, Home, Info, Mail, Users, Settings, LogOut, User, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Navigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const navigationItems = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/about", label: "About", icon: Info },
-    { href: "/contact", label: "Contact", icon: Mail },
-    { href: "/tenant", label: "Tenant Portal", icon: Users },
-    { href: "/admin", label: "Admin", icon: Settings },
-  ];
+  const getNavigationItems = () => {
+    const baseItems = [
+      { href: "/", label: "Home", icon: Home },
+      { href: "/about", label: "About", icon: Info },
+      { href: "/contact", label: "Contact", icon: Mail },
+    ];
+
+    if (user?.role === 'tenant') {
+      return [...baseItems, { href: "/tenant", label: "Tenant Portal", icon: Users }];
+    }
+
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      return [...baseItems, { href: "/admin", label: "Admin Dashboard", icon: Settings }];
+    }
+
+    if (!user) {
+      return [...baseItems, { href: "/login", label: "Login", icon: User }];
+    }
+
+    return baseItems;
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
@@ -41,6 +62,35 @@ const Navigation = () => {
                 </Button>
               );
             })}
+
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center space-x-2">
+                    <User className="h-4 w-4" />
+                    <span>{user.username || user.tenant_login_id}</span>
+                    <Badge variant="secondary" className="ml-2">
+                      {user.role}
+                    </Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {user.role === 'superadmin' && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/admin/management')}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        User Management
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           <div className="md:hidden">

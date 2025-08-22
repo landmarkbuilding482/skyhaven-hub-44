@@ -3,9 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import AdminForms from "./AdminForms";
 import AdminDataTables from "./AdminDataTables";
 import AdminAnalytics from "./AdminAnalytics";
-import { FileText, Database, BarChart3, Settings } from "lucide-react";
+import SuperAdminManagement from "./SuperAdminManagement";
+import { FileText, Database, BarChart3, Settings, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminDashboard = () => {
+  const { user } = useAuth();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -16,7 +20,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Analytics Dashboard
@@ -29,6 +33,12 @@ const AdminDashboard = () => {
             <Database className="h-4 w-4" />
             Data Tables
           </TabsTrigger>
+          {user?.role === 'superadmin' && (
+            <TabsTrigger value="management" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              User Management
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="analytics">
@@ -42,6 +52,12 @@ const AdminDashboard = () => {
         <TabsContent value="data">
           <AdminDataTables />
         </TabsContent>
+
+        {user?.role === 'superadmin' && (
+          <TabsContent value="management">
+            <SuperAdminManagement />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
