@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import TenantData from "./TenantData";
 import { useAuth } from "@/hooks/useAuth";
 import { FeedbackSubmissionDialog } from "@/components/feedback/FeedbackSubmissionDialog";
-import { MessageSquare, AlertTriangle, Lightbulb } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const TenantPortal = () => {
   const { user, logout } = useAuth();
@@ -32,30 +32,11 @@ const TenantPortal = () => {
 
       {/* Feedback Section */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Submit Feedback</h2>
-        <div className="flex gap-4">
-          <Button 
-            onClick={() => setFeedbackDialog({ isOpen: true, type: 'Feedback' })}
-            className="flex items-center gap-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Submit Feedback
-          </Button>
-          <Button 
-            onClick={() => setFeedbackDialog({ isOpen: true, type: 'Complaint' })}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <AlertTriangle className="h-4 w-4" />
-            File Complaint
-          </Button>
-          <Button 
-            onClick={() => setFeedbackDialog({ isOpen: true, type: 'Suggestion' })}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Lightbulb className="h-4 w-4" />
-            Share Suggestion
+        <h2 className="text-xl font-semibold text-foreground mb-4">Submit Feedback & Complaints</h2>
+        <div className="flex gap-2">
+          <Button onClick={() => setFeedbackDialog({ isOpen: true, type: 'Feedback' })}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Feedback Entry
           </Button>
         </div>
       </div>

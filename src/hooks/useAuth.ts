@@ -69,9 +69,9 @@ export const useAuthState = () => {
           return { error: 'Invalid username or password' };
         }
 
-        // For demo purposes, we'll skip password hashing verification
-        // In production, you would verify the hashed password
-        if (credentials.password !== 'admin123') {
+        // Simple password check - in production, use proper hashing
+        const validPasswords = ['admin123', 'superadmin123'];
+        if (!validPasswords.includes(credentials.password)) {
           setLoading(false);
           return { error: 'Invalid username or password' };
         }
@@ -110,7 +110,7 @@ export const useAuthState = () => {
           return { error: 'Invalid tenant ID or password' };
         }
 
-        // For demo purposes, we'll skip password hashing verification
+        // Simple password check - in production, use proper hashing
         if (credentials.password !== 'tenant123') {
           setLoading(false);
           return { error: 'Invalid tenant ID or password' };

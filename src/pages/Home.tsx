@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { Building, Users, BarChart3, Shield, Clock, MapPin, MessageSquare, AlertTriangle, Lightbulb } from "lucide-react";
+import { Building, Users, BarChart3, Shield, Clock, MapPin, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { FeedbackSubmissionDialog } from "@/components/feedback/FeedbackSubmissionDialog";
 
@@ -121,29 +121,10 @@ const Home = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
             Help us improve by sharing your feedback, complaints, or suggestions.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              onClick={() => setFeedbackDialog({ isOpen: true, type: 'Feedback' })}
-              className="flex items-center gap-2"
-            >
-              <MessageSquare className="h-4 w-4" />
-              Submit Feedback
-            </Button>
-            <Button 
-              onClick={() => setFeedbackDialog({ isOpen: true, type: 'Complaint' })}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              File Complaint
-            </Button>
-            <Button 
-              onClick={() => setFeedbackDialog({ isOpen: true, type: 'Suggestion' })}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Lightbulb className="h-4 w-4" />
-              Share Suggestion
+          <div className="flex justify-center">
+            <Button onClick={() => setFeedbackDialog({ isOpen: true, type: 'Feedback' })}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Feedback Entry
             </Button>
           </div>
         </div>
