@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Edit, Trash2, Users, Key } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PasswordChangeDialog } from '@/components/password-management/PasswordChangeDialog';
 
 interface AdminUser {
   id: string;
@@ -43,6 +44,17 @@ const SuperAdminManagement = () => {
   const [isTenantPasswordDialogOpen, setIsTenantPasswordDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
   const [editingTenant, setEditingTenant] = useState<TenantCredential | null>(null);
+  const [passwordChangeDialog, setPasswordChangeDialog] = useState<{
+    isOpen: boolean;
+    userId: string;
+    userType: 'admin' | 'tenant';
+    username: string;
+  }>({
+    isOpen: false,
+    userId: '',
+    userType: 'admin',
+    username: ''
+  });
 
   const [adminForm, setAdminForm] = useState({
     username: '',
@@ -415,6 +427,18 @@ const SuperAdminManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => setPasswordChangeDialog({
+                              isOpen: true,
+                              userId: admin.id,
+                              userType: 'admin',
+                              username: admin.username
+                            })}
+                          >
+                            <Key className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEditAdmin(admin)}
                           >
                             <Edit className="h-4 w-4" />
@@ -471,51 +495,19 @@ const SuperAdminManagement = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Dialog open={isTenantPasswordDialogOpen} onOpenChange={setIsTenantPasswordDialogOpen}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setEditingTenant(credential);
-                                setNewPassword('');
-                              }}
-                            >
-                              <Key className="h-4 w-4 mr-2" />
-                              Reset Password
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Reset Tenant Password</DialogTitle>
-                              <DialogDescription>
-                                Reset password for {credential.tenants?.name} ({credential.tenant_login_id})
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <Input
-                                  id="new-password"
-                                  type="password"
-                                  value={newPassword}
-                                  onChange={(e) => setNewPassword(e.target.value)}
-                                  placeholder="Enter new password"
-                                />
-                              </div>
-                              <div className="p-3 bg-muted rounded-lg">
-                                <p className="text-sm text-muted-foreground">
-                                  <strong>Note:</strong> For demo purposes, all tenant passwords will be reset to "tenant123"
-                                </p>
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button onClick={handleTenantPasswordUpdate}>
-                                Reset Password
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPasswordChangeDialog({
+                            isOpen: true,
+                            userId: credential.id,
+                            userType: 'tenant',
+                            username: credential.tenant_login_id
+                          })}
+                        >
+                          <Key className="h-4 w-4 mr-2" />
+                          Reset Password
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -525,6 +517,14 @@ const SuperAdminManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <PasswordChangeDialog
+        isOpen={passwordChangeDialog.isOpen}
+        onClose={() => setPasswordChangeDialog(prev => ({ ...prev, isOpen: false }))}
+        userId={passwordChangeDialog.userId}
+        userType={passwordChangeDialog.userType}
+        username={passwordChangeDialog.username}
+      />
     </div>
   );
 };
