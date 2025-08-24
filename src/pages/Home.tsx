@@ -8,14 +8,16 @@ import { FeedbackSubmissionDialog } from "@/components/feedback/FeedbackSubmissi
 
 const Home = () => {
   const { user } = useAuth();
-  const [feedbackDialog, setFeedbackDialog] = useState<{
-    isOpen: boolean;
-    type: 'Feedback' | 'Complaint' | 'Suggestion';
-  }>({
-    isOpen: false,
-    type: 'Feedback'
+  const [feedbackForm, setFeedbackForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    tenant_id: "none",
+    type: "",
+    category: "",
+    description: "",
+    status: "Under Review",
+    assigned_to: "unassigned"
   });
-
+  
   return (
     <div className="space-y-16">
       {/* Hero Section */}
