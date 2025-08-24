@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Building, Users, BarChart3, Shield, Clock, MapPin, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { FeedbackSubmissionDialog } from './AdminDataTables';
+import { FeedbackSubmissionDialog } from "@/components/feedback/FeedbackSubmissionDialog";
 
 const Home = () => {
   const { user } = useAuth();
