@@ -14,6 +14,7 @@ import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
 import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type FloorOccupancy = {
   id: string;
@@ -95,6 +96,7 @@ type AssetInventory = {
 
 
 const AdminDataTables = () => {
+  const { hasTablePermission } = usePermissions();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -256,18 +258,20 @@ const AdminDataTables = () => {
   const [tempRevenueExpenseDropdownOptions, setTempRevenueExpenseDropdownOptions] = useState(revenueExpenseDropdownOptions);
   const [tempAssetInventoryDropdownOptions, setTempAssetInventoryDropdownOptions] = useState(assetInventoryDropdownOptions);
 
-  const tables = [
-    { value: "tenantsManagement", label: "Tenants Management (Live)" },
-    { value: "leaseAgreements", label: "Lease Agreements Table" },
-    { value: "rentPaymentsLive", label: "Rent Payments (Live)" },
-    { value: "occupancy", label: "Occupancy Table" },
-    { value: "maintenance", label: "Maintenance & Repairs Table" },
-    { value: "utilities", label: "Utilities Table" },
-    { value: "feedback", label: "Feedback & Complaints Table" },
-    { value: "revenue", label: "Revenue & Expenses Table" },
-    { value: "assets", label: "Asset Inventory Table" },
-    
+  const allTables = [
+    { value: "tenantsManagement", label: "Tenants Management (Live)", permission: "tenants" },
+    { value: "leaseAgreements", label: "Lease Agreements Table", permission: "lease_agreements" },
+    { value: "rentPaymentsLive", label: "Rent Payments (Live)", permission: "rent_payments" },
+    { value: "occupancy", label: "Occupancy Table", permission: "floor_occupancy" },
+    { value: "maintenance", label: "Maintenance & Repairs Table", permission: "maintenance_repairs" },
+    { value: "utilities", label: "Utilities Table", permission: "utilities" },
+    { value: "feedback", label: "Feedback & Complaints Table", permission: "feedback_complaints" },
+    { value: "revenue", label: "Revenue & Expenses Table", permission: "revenue_expenses" },
+    { value: "assets", label: "Asset Inventory Table", permission: "asset_inventory" },
   ];
+
+  // Filter tables based on user permissions
+  const tables = allTables.filter(table => hasTablePermission(table.permission));
 
   // Fetch data functions
   const fetchFloorData = async () => {

@@ -1,6 +1,12 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Simple password verification function
+const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+  // For now, compare directly. In production, use proper bcrypt comparison
+  return password === hash;
+};
+
 export type UserRole = 'superadmin' | 'admin' | 'tenant';
 
 export interface AuthUser {
@@ -69,9 +75,9 @@ export const useAuthState = () => {
           return { error: 'Invalid username or password' };
         }
 
-        // Simple password check - in production, use proper hashing
-        const validPasswords = ['admin123', 'superadmin123'];
-        if (!validPasswords.includes(credentials.password)) {
+        // Verify password against stored hash
+        const isValidPassword = await verifyPassword(credentials.password, data.password_hash);
+        if (!isValidPassword) {
           setLoading(false);
           return { error: 'Invalid username or password' };
         }
@@ -110,8 +116,9 @@ export const useAuthState = () => {
           return { error: 'Invalid tenant ID or password' };
         }
 
-        // Simple password check - in production, use proper hashing
-        if (credentials.password !== 'tenant123') {
+        // Verify password against stored hash
+        const isValidPassword = await verifyPassword(credentials.password, data.password_hash);
+        if (!isValidPassword) {
           setLoading(false);
           return { error: 'Invalid tenant ID or password' };
         }

@@ -5,10 +5,10 @@ import AdminDataTables from "./AdminDataTables";
 import AdminAnalytics from "./AdminAnalytics";
 import SuperAdminManagement from "./SuperAdminManagement";
 import { FileText, Database, BarChart3, Settings, Shield } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { hasPagePermission, hasRole } = usePermissions();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -20,20 +20,26 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="forms" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Forms
-          </TabsTrigger>
-          <TabsTrigger value="data" className="flex items-center gap-2">
-            <Database className="h-4 w-4" />
-            Data Tables
-          </TabsTrigger>
-          {user?.role === 'superadmin' && (
+        <TabsList className={`grid w-full ${hasRole('superadmin') ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          {hasPagePermission('analytics') && (
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics Dashboard
+            </TabsTrigger>
+          )}
+          {hasPagePermission('forms') && (
+            <TabsTrigger value="forms" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Forms
+            </TabsTrigger>
+          )}
+          {hasPagePermission('data-tables') && (
+            <TabsTrigger value="data" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Data Tables
+            </TabsTrigger>
+          )}
+          {hasRole('superadmin') && (
             <TabsTrigger value="management" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
               User Management
@@ -41,19 +47,25 @@ const AdminDashboard = () => {
           )}
         </TabsList>
 
-        <TabsContent value="analytics">
-          <AdminAnalytics />
-        </TabsContent>
+        {hasPagePermission('analytics') && (
+          <TabsContent value="analytics">
+            <AdminAnalytics />
+          </TabsContent>
+        )}
 
-        <TabsContent value="forms">
-          <AdminForms />
-        </TabsContent>
+        {hasPagePermission('forms') && (
+          <TabsContent value="forms">
+            <AdminForms />
+          </TabsContent>
+        )}
 
-        <TabsContent value="data">
-          <AdminDataTables />
-        </TabsContent>
+        {hasPagePermission('data-tables') && (
+          <TabsContent value="data">
+            <AdminDataTables />
+          </TabsContent>
+        )}
 
-        {user?.role === 'superadmin' && (
+        {hasRole('superadmin') && (
           <TabsContent value="management">
             <SuperAdminManagement />
           </TabsContent>
