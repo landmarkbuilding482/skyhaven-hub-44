@@ -94,6 +94,13 @@ type AssetInventory = {
   warranty_year: number | null;
 };
 
+type PaidParking = {
+  id: string;
+  date: string;
+  number_of_vehicles: number;
+  amount: number;
+};
+  
 
 const AdminDataTables = () => {
   const { hasTablePermission } = usePermissions();
@@ -121,7 +128,9 @@ const AdminDataTables = () => {
   
   // State for asset inventory data
   const [assetInventoryData, setAssetInventoryData] = useState<AssetInventory[]>([]);
-  
+
+  // New state for paid parking data
+  const [paidParkingData, setPaidParkingData] = useState<PaidParking[]>([]);
   
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
@@ -134,6 +143,7 @@ const AdminDataTables = () => {
   const [isRevenueExpenseViewDialogOpen, setIsRevenueExpenseViewDialogOpen] = useState(false);
   const [isAssetInventoryDialogOpen, setIsAssetInventoryDialogOpen] = useState(false);
   const [isAssetInventoryViewDialogOpen, setIsAssetInventoryViewDialogOpen] = useState(false);
+  const [isPaidParkingDialogOpen, setIsPaidParkingDialogOpen] = useState(false);
   
   
   const [isDropdownConfigOpen, setIsDropdownConfigOpen] = useState(false);
@@ -151,6 +161,7 @@ const AdminDataTables = () => {
   const [viewingRevenueExpense, setViewingRevenueExpense] = useState<RevenueExpense | null>(null);
   const [editingAssetInventory, setEditingAssetInventory] = useState<AssetInventory | null>(null);
   const [viewingAssetInventory, setViewingAssetInventory] = useState<AssetInventory | null>(null);
+  const [editingPaidParking, setEditingPaidParking] = useState<PaidParking | null>(null);
   
   
   
@@ -215,6 +226,12 @@ const AdminDataTables = () => {
     warranty_year: ""
   });
 
+    const [paidParkingForm, setPaidParkingForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    number_of_vehicles: 0,
+    amount: 0
+  });
+
   // Dropdown options state
   const [dropdownOptions, setDropdownOptions] = useState({
     issueReporter: ["Maintenance Team", "Building Supervisor", "Other"],
@@ -268,6 +285,7 @@ const AdminDataTables = () => {
     { value: "feedback", label: "Feedback & Complaints Table", permission: "feedback_complaints" },
     { value: "revenue", label: "Revenue & Expenses Table", permission: "revenue_expenses" },
     { value: "assets", label: "Asset Inventory Table", permission: "asset_inventory" },
+    { value: "paidParking", label: "Paid Parking Table", permission: "paid_parking" },
   ];
 
   // Filter tables based on user permissions
@@ -316,6 +334,21 @@ const AdminDataTables = () => {
     setParkingStats(data);
   };
 
+  // New fetch function for paid parking data
+  const fetchPaidParkingData = async () => {
+    const { data, error } = await supabase
+      .from('paid_parking')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) {
+      toast.error('Failed to fetch paid parking data');
+      return;
+    }
+
+    setPaidParkingData(data || []);
+  };
+  
   // Fetch maintenance data functions
   const fetchMaintenanceData = async () => {
     const { data, error } = await supabase
@@ -446,6 +479,8 @@ const AdminDataTables = () => {
       fetchRevenueExpenseData();
     } else if (selectedTable === 'assets') {
       fetchAssetInventoryData();
+    } else if (selectedTable === 'paidParking') {
+      fetchPaidParkingData();
     }
   }, [selectedTable]);
 
@@ -588,6 +623,67 @@ const AdminDataTables = () => {
     toast.success('Parking statistics updated');
   };
 
+// New CRUD functions for paid parking
+  const handlePaidParkingSubmit = async () => {
+    if (editingPaidParking) {
+      // Update existing record
+      const { error } = await supabase
+        .from('paid_parking')
+        .update(paidParkingForm)
+        .eq('id', editingPaidParking.id);
+
+      if (error) {
+        toast.error('Failed to update paid parking record');
+        return;
+      }
+
+      toast.success('Paid parking record updated successfully');
+    } else {
+      // Create new record
+      const { error } = await supabase
+        .from('paid_parking')
+        .insert([paidParkingForm]);
+
+      if (error) {
+        toast.error('Failed to create paid parking record');
+        return;
+      }
+
+      toast.success('Paid parking record created successfully');
+    }
+
+    setIsPaidParkingDialogOpen(false);
+    setEditingPaidParking(null);
+    setPaidParkingForm({ date: new Date().toISOString().split('T')[0], number_of_vehicles: 0, amount: 0 });
+    fetchPaidParkingData();
+  };
+
+  const handlePaidParkingEdit = (record: PaidParking) => {
+    setEditingPaidParking(record);
+    setPaidParkingForm({
+      date: record.date,
+      number_of_vehicles: record.number_of_vehicles,
+      amount: record.amount
+    });
+    setIsPaidParkingDialogOpen(true);
+  };
+
+  const handlePaidParkingDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('paid_parking')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast.error('Failed to delete paid parking record');
+      return;
+    }
+
+    toast.success('Paid parking record deleted successfully');
+    fetchPaidParkingData();
+  };
+
+  
   // CRUD functions for maintenance repairs
   const handleMaintenanceSubmit = async () => {
     if (editingMaintenance) {
@@ -1301,6 +1397,103 @@ const AdminDataTables = () => {
     return Math.round((occupied / available) * 100 * 10) / 10;
   };
 
+  // Render function for the new Paid Parking Table
+  const renderPaidParkingTable = () => (
+    <>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Paid Parking</h2>
+        <Dialog open={isPaidParkingDialogOpen} onOpenChange={setIsPaidParkingDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => {
+              setEditingPaidParking(null);
+              setPaidParkingForm({ date: new Date().toISOString().split('T')[0], number_of_vehicles: 0, amount: 0 });
+            }}>
+              <Plus className="mr-2 h-4 w-4" /> Add Entry
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingPaidParking ? "Edit" : "Add"} Paid Parking Entry</DialogTitle>
+              <DialogDescription>
+                Fill in the details for the paid parking record.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="date" className="text-right">Date</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={paidParkingForm.date}
+                  onChange={(e) => setPaidParkingForm({ ...paidParkingForm, date: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="vehicles" className="text-right">Number of Vehicles</Label>
+                <Input
+                  id="vehicles"
+                  type="number"
+                  value={paidParkingForm.number_of_vehicles}
+                  onChange={(e) => setPaidParkingForm({ ...paidParkingForm, number_of_vehicles: parseInt(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">Amount ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={paidParkingForm.amount}
+                  onChange={(e) => setPaidParkingForm({ ...paidParkingForm, amount: parseFloat(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" onClick={handlePaidParkingSubmit}>
+                {editingPaidParking ? "Save changes" : "Add Entry"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Number of Vehicles</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paidParkingData
+            .filter(record =>
+              record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              record.number_of_vehicles.toString().includes(searchTerm.toLowerCase()) ||
+              record.amount.toString().includes(searchTerm.toLowerCase())
+            )
+            .map((record) => (
+              <TableRow key={record.id}>
+                <TableCell>{record.date}</TableCell>
+                <TableCell>{record.number_of_vehicles}</TableCell>
+                <TableCell>${record.amount.toFixed(2)}</TableCell>
+                <TableCell className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handlePaidParkingEdit(record)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handlePaidParkingDelete(record.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
+      </Table>
+    </>
+  );
+  
   const renderTable = () => {
     if (!selectedTable) return null;
 
