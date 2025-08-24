@@ -16,16 +16,6 @@ const Home = () => {
     type: 'Feedback'
   });
 
-  const handleFeedbackSubmit = async (formData: any) => {
-    const { data, error } = await supabase.from('feedback_complaints').insert([formData]);
-    if (error) {
-      toast.error('Failed to submit feedback record');
-      return;
-    }
-    toast.success('Feedback submitted successfully');
-    setFeedbackDialog({ ...feedbackDialog, isOpen: false });
-  };
-
   return (
     <div className="space-y-16">
       {/* Hero Section */}
