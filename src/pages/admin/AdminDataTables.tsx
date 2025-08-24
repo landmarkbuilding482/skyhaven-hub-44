@@ -97,7 +97,8 @@ type AssetInventory = {
 type PaidParking = {
   id: string;
   date: string;
-  number_of_vehicles: number;
+  type: string;
+  description: string;
   amount: number;
 };
   
@@ -228,7 +229,8 @@ const AdminDataTables = () => {
 
     const [paidParkingForm, setPaidParkingForm] = useState({
     date: new Date().toISOString().split('T')[0],
-    number_of_vehicles: 0,
+    type: 'parking',
+    description: '',
     amount: 0
   });
 
@@ -337,8 +339,9 @@ const AdminDataTables = () => {
   // New fetch function for paid parking data
   const fetchPaidParkingData = async () => {
     const { data, error } = await supabase
-      .from('paid_parking')
+      .from('revenue_expenses')
       .select('*')
+      .eq('category', 'parking')
       .order('date', { ascending: false });
 
     if (error) {
@@ -625,11 +628,16 @@ const AdminDataTables = () => {
 
 // New CRUD functions for paid parking
   const handlePaidParkingSubmit = async () => {
+    const formData = {
+      ...paidParkingForm,
+      category: 'parking'
+    };
+
     if (editingPaidParking) {
       // Update existing record
       const { error } = await supabase
-        .from('paid_parking')
-        .update(paidParkingForm)
+        .from('revenue_expenses')
+        .update(formData)
         .eq('id', editingPaidParking.id);
 
       if (error) {
@@ -641,8 +649,8 @@ const AdminDataTables = () => {
     } else {
       // Create new record
       const { error } = await supabase
-        .from('paid_parking')
-        .insert([paidParkingForm]);
+        .from('revenue_expenses')
+        .insert([formData]);
 
       if (error) {
         toast.error('Failed to create paid parking record');
@@ -654,15 +662,16 @@ const AdminDataTables = () => {
 
     setIsPaidParkingDialogOpen(false);
     setEditingPaidParking(null);
-    setPaidParkingForm({ date: new Date().toISOString().split('T')[0], number_of_vehicles: 0, amount: 0 });
+    setPaidParkingForm({ date: new Date().toISOString().split('T')[0], type: 'parking', description: '', amount: 0 });
     fetchPaidParkingData();
   };
 
   const handlePaidParkingEdit = (record: PaidParking) => {
     setEditingPaidParking(record);
     setPaidParkingForm({
-      date: record.date,
-      number_of_vehicles: record.number_of_vehicles,
+      date: record.date || new Date().toISOString().split('T')[0],
+      type: record.type,
+      description: record.description || '',
       amount: record.amount
     });
     setIsPaidParkingDialogOpen(true);
@@ -670,7 +679,7 @@ const AdminDataTables = () => {
 
   const handlePaidParkingDelete = async (id: string) => {
     const { error } = await supabase
-      .from('paid_parking')
+      .from('revenue_expenses')
       .delete()
       .eq('id', id);
 
@@ -1406,7 +1415,7 @@ const AdminDataTables = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               setEditingPaidParking(null);
-              setPaidParkingForm({ date: new Date().toISOString().split('T')[0], number_of_vehicles: 0, amount: 0 });
+              setPaidParkingForm({ date: new Date().toISOString().split('T')[0], type: 'parking', description: '', amount: 0 });
             }}>
               <Plus className="mr-2 h-4 w-4" /> Add Entry
             </Button>
@@ -1430,12 +1439,12 @@ const AdminDataTables = () => {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="vehicles" className="text-right">Number of Vehicles</Label>
+                <Label htmlFor="description" className="text-right">Description</Label>
                 <Input
-                  id="vehicles"
-                  type="number"
-                  value={paidParkingForm.number_of_vehicles}
-                  onChange={(e) => setPaidParkingForm({ ...paidParkingForm, number_of_vehicles: parseInt(e.target.value) })}
+                  id="description"
+                  type="text"
+                  value={paidParkingForm.description}
+                  onChange={(e) => setPaidParkingForm({ ...paidParkingForm, description: e.target.value })}
                   className="col-span-3"
                 />
               </div>
@@ -1462,7 +1471,7 @@ const AdminDataTables = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Date</TableHead>
-            <TableHead>Number of Vehicles</TableHead>
+            <TableHead>Description</TableHead>
             <TableHead>Amount</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -1470,15 +1479,15 @@ const AdminDataTables = () => {
         <TableBody>
           {paidParkingData
             .filter(record =>
-              record.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              record.number_of_vehicles.toString().includes(searchTerm.toLowerCase()) ||
+              record.date?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              record.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
               record.amount.toString().includes(searchTerm.toLowerCase())
             )
             .map((record) => (
               <TableRow key={record.id}>
                 <TableCell>{record.date}</TableCell>
-                <TableCell>{record.number_of_vehicles}</TableCell>
-                <TableCell>${record.amount.toFixed(2)}</TableCell>
+                <TableCell>{record.description}</TableCell>
+                <TableCell>${record.amount?.toFixed(2)}</TableCell>
                 <TableCell className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => handlePaidParkingEdit(record)}>
                     <Edit className="h-4 w-4" />
