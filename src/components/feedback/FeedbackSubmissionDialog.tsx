@@ -24,8 +24,11 @@ export const FeedbackSubmissionDialog = ({
   const { user } = useAuth();
   const { dropdownOptions } = useFeedbackDropdowns();
   const [loading, setLoading] = useState(false);
+  const [tenants, setTenants] = useState<Array<{id: string, name: string, tenant_id: string}>>([]);
   
   const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    tenant_id: user?.role === 'tenant' ? user.id : "",
     type: feedbackType,
     category: "",
     description: "",
@@ -37,8 +40,25 @@ export const FeedbackSubmissionDialog = ({
     setFormData(prev => ({ ...prev, type: feedbackType }));
   }, [feedbackType]);
 
+  useEffect(() => {
+    const fetchTenants = async () => {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, tenant_id')
+        .eq('status', 'active');
+      
+      if (!error && data) {
+        setTenants(data);
+      }
+    };
+
+    if (user?.role !== 'tenant') {
+      fetchTenants();
+    }
+  }, [user]);
+
   const handleSubmit = async () => {
-    if (!formData.category || !formData.description) {
+    if (!formData.category || !formData.description || !formData.date) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -49,8 +69,8 @@ export const FeedbackSubmissionDialog = ({
       const { error } = await supabase
         .from('feedback_complaints')
         .insert([{
-          date: new Date().toISOString().split('T')[0],
-          tenant_id: user?.role === 'tenant' ? user.id : null,
+          date: formData.date,
+          tenant_id: formData.tenant_id || null,
           type: formData.type,
           category: formData.category,
           description: formData.description,
@@ -65,6 +85,8 @@ export const FeedbackSubmissionDialog = ({
 
       toast.success(`${feedbackType} submitted successfully`);
       setFormData({
+        date: new Date().toISOString().split('T')[0],
+        tenant_id: user?.role === 'tenant' ? user.id : "",
         type: feedbackType,
         category: "",
         description: "",
@@ -81,7 +103,7 @@ export const FeedbackSubmissionDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Submit {feedbackType}</DialogTitle>
           <DialogDescription>
@@ -89,7 +111,36 @@ export const FeedbackSubmissionDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+            />
+          </div>
+
+          {user?.role !== 'tenant' && (
+            <div>
+              <Label htmlFor="tenant">Select Tenant</Label>
+              <Select value={formData.tenant_id} onValueChange={(value) => setFormData(prev => ({ ...prev, tenant_id: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tenant" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No specific tenant</SelectItem>
+                  {tenants.map((tenant) => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name} ({tenant.tenant_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div>
             <Label htmlFor="type">Type</Label>
             <Select value={formData.type} onValueChange={(value: 'Feedback' | 'Complaint' | 'Suggestion') => setFormData(prev => ({ ...prev, type: value }))}>
@@ -131,6 +182,39 @@ export const FeedbackSubmissionDialog = ({
               placeholder={`Describe your ${feedbackType.toLowerCase()}...`}
               rows={4}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {dropdownOptions.status.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="assigned_to">Assigned To</Label>
+            <Select value={formData.assigned_to} onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_to: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {dropdownOptions.assigned_to.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
