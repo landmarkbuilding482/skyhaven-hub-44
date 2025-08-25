@@ -8,7 +8,7 @@ import { FileText, Database, BarChart3, Settings, Shield } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminDashboard = () => {
-  const { hasPagePermission, hasRole, user } = usePermissions();
+  const { hasPagePermission, hasRole } = usePermissions();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -21,19 +21,19 @@ const AdminDashboard = () => {
 
       <Tabs defaultValue="analytics" className="space-y-6">
         <TabsList className={`grid w-full ${hasRole('superadmin') ? 'grid-cols-4' : 'grid-cols-3'}`}>
-          {(hasPagePermission('analytics') || user?.role === 'superadmin') && (
+          {hasPagePermission('analytics') && (
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Analytics Dashboard
             </TabsTrigger>
           )}
-          {(hasPagePermission('forms') || user?.role === 'superadmin') && (
+          {hasPagePermission('forms') && (
             <TabsTrigger value="forms" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Forms
             </TabsTrigger>
           )}
-          {(hasPagePermission('data') || user?.role === 'superadmin') && (
+          {hasPagePermission('data-tables') && (
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Data Tables
@@ -47,19 +47,19 @@ const AdminDashboard = () => {
           )}
         </TabsList>
 
-        {(hasPagePermission('analytics') || user?.role === 'superadmin') && (
+        {hasPagePermission('analytics') && (
           <TabsContent value="analytics">
             <AdminAnalytics />
           </TabsContent>
         )}
 
-        {(hasPagePermission('forms') || user?.role === 'superadmin') && (
+        {hasPagePermission('forms') && (
           <TabsContent value="forms">
             <AdminForms />
           </TabsContent>
         )}
 
-        {(hasPagePermission('data') || user?.role === 'superadmin') && (
+        {hasPagePermission('data-tables') && (
           <TabsContent value="data">
             <AdminDataTables />
           </TabsContent>
