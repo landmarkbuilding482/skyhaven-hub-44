@@ -33,13 +33,12 @@ const AdminDashboard = () => {
               Forms
             </TabsTrigger>
           )}
-          {hasPagePermission('data-tables') || hasPagePermission('datatables')) && (
+          {hasPagePermission('data-tables') && (
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Data Tables
             </TabsTrigger>
           )}
-          
           {hasRole('superadmin') && (
             <TabsTrigger value="management" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -60,7 +59,7 @@ const AdminDashboard = () => {
           </TabsContent>
         )}
 
-        {hasPagePermission('data-tables') || hasPagePermission('datatables')) && (
+        {hasPagePermission('data-tables') && (
           <TabsContent value="data">
             <AdminDataTables />
           </TabsContent>
