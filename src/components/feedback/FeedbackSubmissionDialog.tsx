@@ -8,33 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useFeedbackDropdowns } from "@/hooks/useFeedbackDropdowns";
 
 interface FeedbackSubmissionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   feedbackType: 'Feedback' | 'Complaint' | 'Suggestion';
-  dropdownOptions?: {
-    type: string[];
-    category: string[];
-    status: string[];
-    assigned_to: string[];
-  };
 }
 
 export const FeedbackSubmissionDialog = ({ 
   isOpen, 
   onClose, 
-  feedbackType,
-  dropdownOptions 
+  feedbackType
 }: FeedbackSubmissionDialogProps) => {
   const { user } = useAuth();
+  const { dropdownOptions } = useFeedbackDropdowns();
   const [loading, setLoading] = useState(false);
-  const [options, setOptions] = useState({
-    type: ["Complaint", "Feedback", "Suggestion"],
-    category: ["Maintenance", "Billing", "Security", "Amenities", "Noise", "Parking", "Cleanliness", "Staff", "Other"],
-    status: ["In Progress", "Under Review", "Closed"],
-    assigned_to: ["Building Manager", "Maintenance Team", "Security", "Admin", "Customer Service"]
-  });
   
   const [formData, setFormData] = useState({
     type: feedbackType,
@@ -45,25 +34,8 @@ export const FeedbackSubmissionDialog = ({
   });
 
   useEffect(() => {
-    if (dropdownOptions) {
-      setOptions(dropdownOptions);
-    }
-  }, [dropdownOptions]);
-
-  useEffect(() => {
     setFormData(prev => ({ ...prev, type: feedbackType }));
   }, [feedbackType]);
-
-  const fetchDropdownOptions = async () => {
-    // This would typically fetch from a settings table or use the configured options
-    // For now, we'll use the default options
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchDropdownOptions();
-    }
-  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!formData.category || !formData.description) {
@@ -125,7 +97,7 @@ export const FeedbackSubmissionDialog = ({
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                {options.type.map((option) => (
+                {dropdownOptions.type.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
@@ -141,7 +113,7 @@ export const FeedbackSubmissionDialog = ({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {options.category.map((option) => (
+                {dropdownOptions.category.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>

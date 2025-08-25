@@ -42,8 +42,10 @@ const SuperAdminManagement = () => {
   const [tenantCredentials, setTenantCredentials] = useState<TenantCredential[]>([]);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [isTenantPasswordDialogOpen, setIsTenantPasswordDialogOpen] = useState(false);
+  const [isTenantCredentialDialogOpen, setIsTenantCredentialDialogOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
   const [editingTenant, setEditingTenant] = useState<TenantCredential | null>(null);
+  const [tenantsList, setTenantsList] = useState<Array<{id: string, name: string, tenant_id: string}>>([]);
   const [passwordChangeDialog, setPasswordChangeDialog] = useState<{
     isOpen: boolean;
     userId: string;
@@ -66,29 +68,38 @@ const SuperAdminManagement = () => {
     }
   });
 
+  const [tenantCredentialForm, setTenantCredentialForm] = useState({
+    tenant_id: '',
+    tenant_login_id: '',
+    password: ''
+  });
+
   const [newPassword, setNewPassword] = useState('');
 
   const availableTables = [
-    'tenantsManagement',
-    'leaseAgreements', 
-    'rentPayments',
-    'occupancy',
-    'maintenance',
-    'utilities',
-    'feedback',
-    'revenue',
-    'assets'
+    { id: 'tenants', label: 'Tenants Management' },
+    { id: 'lease_agreements', label: 'Lease Agreements' },
+    { id: 'rent_payments', label: 'Rent Payments' },
+    { id: 'floor_occupancy', label: 'Occupancy' },
+    { id: 'maintenance_repairs', label: 'Maintenance & Repairs' },
+    { id: 'utilities', label: 'Utilities' },
+    { id: 'feedback_complaints', label: 'Feedback & Complaints' },
+    { id: 'revenue_expenses', label: 'Revenue & Expenses' },
+    { id: 'asset_inventory', label: 'Asset Inventory' }
   ];
 
   const availablePages = [
-    'analytics',
-    'forms', 
-    'data'
+    { id: 'analytics', label: 'Analytics Dashboard' },
+    { id: 'forms', label: 'Forms' },
+    { id: 'data', label: 'Data Tables' }
   ];
+
+  const [selectedPage, setSelectedPage] = useState<string>('');
 
   useEffect(() => {
     fetchAdminUsers();
     fetchTenantCredentials();
+    fetchTenantsList();
   }, []);
 
   const fetchAdminUsers = async () => {
@@ -135,6 +146,20 @@ const SuperAdminManagement = () => {
     }
 
     setTenantCredentials(data || []);
+  };
+
+  const fetchTenantsList = async () => {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('id, name, tenant_id')
+      .order('name');
+
+    if (error) {
+      toast.error('Failed to fetch tenants list');
+      return;
+    }
+
+    setTenantsList(data || []);
   };
 
   const handleAdminSubmit = async () => {
@@ -254,6 +279,45 @@ const SuperAdminManagement = () => {
           : prev.permissions.pages.filter(p => p !== page)
       }
     }));
+    
+    // Set selected page for table permissions
+    if (checked && page === 'data') {
+      setSelectedPage('data');
+    } else if (!checked && page === 'data') {
+      setSelectedPage('');
+      // Clear all table permissions if data page is unchecked
+      setAdminForm(prev => ({
+        ...prev,
+        permissions: {
+          ...prev.permissions,
+          tables: []
+        }
+      }));
+    }
+  };
+
+  const handleTenantCredentialSubmit = async () => {
+    const { error } = await supabase
+      .from('tenant_credentials')
+      .insert([{
+        tenant_id: tenantCredentialForm.tenant_id,
+        tenant_login_id: tenantCredentialForm.tenant_login_id,
+        password_hash: '$2b$10$8K1p/a9UxQP/8g5LJ/TJBOhJ9X0SQm8T6d4g4.d9W2b3Z0c/zQG5G' // Default password hashed
+      }]);
+
+    if (error) {
+      toast.error('Failed to create tenant credential');
+      return;
+    }
+
+    toast.success('Tenant credential created successfully');
+    setIsTenantCredentialDialogOpen(false);
+    setTenantCredentialForm({
+      tenant_id: '',
+      tenant_login_id: '',
+      password: ''
+    });
+    fetchTenantCredentials();
   };
 
   return (
@@ -344,44 +408,46 @@ const SuperAdminManagement = () => {
                       {adminForm.role === 'admin' && (
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label>Table Permissions</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {availableTables.map((table) => (
-                                <div key={table} className="flex items-center space-x-2">
+                            <Label>Page Permissions</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {availablePages.map((page) => (
+                                <div key={page.id} className="flex items-center space-x-2">
                                   <Checkbox
-                                    id={`table-${table}`}
-                                    checked={adminForm.permissions.tables.includes(table)}
+                                    id={`page-${page.id}`}
+                                    checked={adminForm.permissions.pages.includes(page.id)}
                                     onCheckedChange={(checked) => 
-                                      handleTablePermissionChange(table, checked as boolean)
+                                      handlePagePermissionChange(page.id, checked as boolean)
                                     }
                                   />
-                                  <Label htmlFor={`table-${table}`} className="text-sm">
-                                    {table}
+                                  <Label htmlFor={`page-${page.id}`} className="text-sm">
+                                    {page.label}
                                   </Label>
                                 </div>
                               ))}
                             </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label>Page Permissions</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                              {availablePages.map((page) => (
-                                <div key={page} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`page-${page}`}
-                                    checked={adminForm.permissions.pages.includes(page)}
-                                    onCheckedChange={(checked) => 
-                                      handlePagePermissionChange(page, checked as boolean)
-                                    }
-                                  />
-                                  <Label htmlFor={`page-${page}`} className="text-sm">
-                                    {page}
-                                  </Label>
-                                </div>
-                              ))}
+                          {adminForm.permissions.pages.includes('data') && (
+                            <div className="space-y-2">
+                              <Label>Data Table Permissions</Label>
+                              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                                {availableTables.map((table) => (
+                                  <div key={table.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`table-${table.id}`}
+                                      checked={adminForm.permissions.tables.includes(table.id)}
+                                      onCheckedChange={(checked) => 
+                                        handleTablePermissionChange(table.id, checked as boolean)
+                                      }
+                                    />
+                                    <Label htmlFor={`table-${table.id}`} className="text-sm">
+                                      {table.label}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -465,10 +531,68 @@ const SuperAdminManagement = () => {
         <TabsContent value="tenants">
           <Card>
             <CardHeader>
-              <CardTitle>Tenant Credentials</CardTitle>
-              <CardDescription>
-                Manage tenant login credentials and passwords
-              </CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Tenant Credentials</CardTitle>
+                  <CardDescription>
+                    Manage tenant login credentials and passwords
+                  </CardDescription>
+                </div>
+                <Dialog open={isTenantCredentialDialogOpen} onOpenChange={setIsTenantCredentialDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => setTenantCredentialForm({
+                      tenant_id: '',
+                      tenant_login_id: '',
+                      password: ''
+                    })}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Entry
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Tenant Credentials</DialogTitle>
+                      <DialogDescription>
+                        Create login credentials for a tenant
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="tenant">Tenant</Label>
+                        <Select
+                          value={tenantCredentialForm.tenant_id}
+                          onValueChange={(value) => setTenantCredentialForm(prev => ({ ...prev, tenant_id: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select tenant" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {tenantsList.map((tenant) => (
+                              <SelectItem key={tenant.id} value={tenant.id}>
+                                {tenant.name} ({tenant.tenant_id})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="login_id">Login ID</Label>
+                        <Input
+                          id="login_id"
+                          value={tenantCredentialForm.tenant_login_id}
+                          onChange={(e) => setTenantCredentialForm(prev => ({ ...prev, tenant_login_id: e.target.value }))}
+                          placeholder="Enter login ID"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleTenantCredentialSubmit}>
+                        Create Credentials
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent>
               <Table>

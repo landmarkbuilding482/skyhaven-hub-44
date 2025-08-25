@@ -15,6 +15,7 @@ import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useFeedbackDropdowns } from "@/hooks/useFeedbackDropdowns";
 
 type FloorOccupancy = {
   id: string;
@@ -97,6 +98,7 @@ type AssetInventory = {
 
 const AdminDataTables = () => {
   const { hasTablePermission } = usePermissions();
+  const { dropdownOptions: feedbackDropdownOptions, updateDropdownOptions } = useFeedbackDropdowns();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -230,13 +232,8 @@ const AdminDataTables = () => {
     type: ["Electricity", "Water", "Gas", "Internet"]
   });
 
-  // Feedback & Complaints dropdown options state
-  const [feedbackDropdownOptions, setFeedbackDropdownOptions] = useState({
-    type: ["Complaint", "Feedback", "Suggestion"],
-    category: ["Maintenance", "Billing", "Security", "Amenities", "Noise", "Parking", "Cleanliness", "Staff", "Other"],
-    status: ["In Progress", "Under Review", "Closed"],
-    assigned_to: ["Building Manager", "Maintenance Team", "Security", "Admin", "Customer Service"]
-  });
+  // Local state for editing feedback dropdown options
+  const [localFeedbackDropdownOptions, setLocalFeedbackDropdownOptions] = useState(feedbackDropdownOptions);
 
   // Revenue & Expenses dropdown options state
   const [revenueExpenseDropdownOptions, setRevenueExpenseDropdownOptions] = useState({
@@ -254,7 +251,7 @@ const AdminDataTables = () => {
   // Temp dropdown options for editing
   const [tempDropdownOptions, setTempDropdownOptions] = useState(dropdownOptions);
   const [tempUtilitiesDropdownOptions, setTempUtilitiesDropdownOptions] = useState(utilitiesDropdownOptions);
-  const [tempFeedbackDropdownOptions, setTempFeedbackDropdownOptions] = useState(feedbackDropdownOptions);
+  const [tempFeedbackDropdownOptions, setTempFeedbackDropdownOptions] = useState(localFeedbackDropdownOptions);
   const [tempRevenueExpenseDropdownOptions, setTempRevenueExpenseDropdownOptions] = useState(revenueExpenseDropdownOptions);
   const [tempAssetInventoryDropdownOptions, setTempAssetInventoryDropdownOptions] = useState(assetInventoryDropdownOptions);
 
@@ -1015,13 +1012,14 @@ const AdminDataTables = () => {
 
   // Feedback dropdown configuration functions
   const handleFeedbackDropdownConfigSave = () => {
-    setFeedbackDropdownOptions(tempFeedbackDropdownOptions);
+    setLocalFeedbackDropdownOptions(tempFeedbackDropdownOptions);
+    updateDropdownOptions(tempFeedbackDropdownOptions);
     setIsFeedbackDropdownConfigOpen(false);
     toast.success('Feedback dropdown options updated successfully');
   };
 
   const handleFeedbackDropdownConfigCancel = () => {
-    setTempFeedbackDropdownOptions(feedbackDropdownOptions);
+    setTempFeedbackDropdownOptions(localFeedbackDropdownOptions);
     setIsFeedbackDropdownConfigOpen(false);
   };
 
@@ -2111,7 +2109,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.type.map((type) => (
+                          {localFeedbackDropdownOptions.type.map((type) => (
                             <SelectItem key={type} value={type}>
                               {type}
                             </SelectItem>
@@ -2126,7 +2124,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.category.map((category) => (
+                          {localFeedbackDropdownOptions.category.map((category) => (
                             <SelectItem key={category} value={category}>
                               {category}
                             </SelectItem>
@@ -2151,7 +2149,7 @@ const AdminDataTables = () => {
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackDropdownOptions.status.map((status) => (
+                          {localFeedbackDropdownOptions.status.map((status) => (
                             <SelectItem key={status} value={status}>
                               {status}
                             </SelectItem>
@@ -2167,7 +2165,7 @@ const AdminDataTables = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {feedbackDropdownOptions.assigned_to.map((assignee) => (
+                          {localFeedbackDropdownOptions.assigned_to.map((assignee) => (
                             <SelectItem key={assignee} value={assignee}>
                               {assignee}
                             </SelectItem>
