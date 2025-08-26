@@ -96,14 +96,10 @@ type AssetInventory = {
 };
 
 
-interface AdminDataTablesProps {
-  initialSelectedTable?: string;
-}
-
-const AdminDataTables = ({ initialSelectedTable = "" }: AdminDataTablesProps) => {
+const AdminDataTables = () => {
   const { hasTablePermission } = usePermissions();
   const { dropdownOptions: feedbackDropdownOptions, updateDropdownOptions } = useFeedbackDropdowns();
-  const [selectedTable, setSelectedTable] = useState<string>(initialSelectedTable);
+  const [selectedTable, setSelectedTable] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   
   // State for floor occupancy data
@@ -449,13 +445,6 @@ const AdminDataTables = ({ initialSelectedTable = "" }: AdminDataTablesProps) =>
       fetchAssetInventoryData();
     }
   }, [selectedTable]);
-
-  // Update selectedTable when initialSelectedTable changes
-  useEffect(() => {
-    if (initialSelectedTable) {
-      setSelectedTable(initialSelectedTable);
-    }
-  }, [initialSelectedTable]);
 
 
   // CRUD functions for floor occupancy
