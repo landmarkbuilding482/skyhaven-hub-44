@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, FileText, CreditCard, Wrench, Zap, Users, Calendar, MessageSquare, DollarSign, Package } from "lucide-react";
+import { User, FileText, CreditCard, Wrench, Zap, Users, Calendar, MessageSquare, DollarSign, Package, Building, Car, PieChart, Shield } from "lucide-react";
 
 const AdminForms = () => {
   const [selectedForm, setSelectedForm] = useState("tenant");
@@ -22,6 +22,10 @@ const AdminForms = () => {
     { id: "feedback", label: "Feedback & Complaints", icon: MessageSquare },
     { id: "revenue", label: "Revenue & Expenses", icon: DollarSign },
     { id: "asset", label: "Asset Inventory", icon: Package },
+    { id: "floor_occupancy", label: "Floor Occupancy", icon: Building },
+    { id: "parking_allocations", label: "Parking Allocations", icon: Car },
+    { id: "parking_statistics", label: "Parking Statistics", icon: PieChart },
+    { id: "tenant_credentials", label: "Tenant Login Credentials", icon: Shield },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -657,6 +661,119 @@ const AdminForms = () => {
           </form>
         );
 
+      case "floor_occupancy":
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="floor">Floor</Label>
+                <Input id="floor" placeholder="Floor number or identifier" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Select required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="office">Office</SelectItem>
+                    <SelectItem value="retail">Retail</SelectItem>
+                    <SelectItem value="event">Event Space</SelectItem>
+                    <SelectItem value="common">Common Area</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sqmAvailable">Square Meters Available</Label>
+                <Input id="sqmAvailable" type="number" placeholder="0.00" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sqmOccupied">Square Meters Occupied</Label>
+                <Input id="sqmOccupied" type="number" placeholder="0.00" required />
+              </div>
+            </div>
+            <Button type="submit" className="w-full">Add Floor Occupancy</Button>
+          </form>
+        );
+
+      case "parking_allocations":
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="company">Company</Label>
+                <Input id="company" placeholder="Company name" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="spotsAllowed">Spots Allowed</Label>
+                <Input id="spotsAllowed" type="number" placeholder="Number of spots" required />
+              </div>
+            </div>
+            <Button type="submit" className="w-full">Add Parking Allocation</Button>
+          </form>
+        );
+
+      case "parking_statistics":
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="spotsAvailable">Spots Available</Label>
+                <Input id="spotsAvailable" type="number" placeholder="Number of available spots" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="spotsOccupied">Spots Occupied</Label>
+                <Input id="spotsOccupied" type="number" placeholder="Number of occupied spots" required />
+              </div>
+            </div>
+            <Button type="submit" className="w-full">Update Parking Statistics</Button>
+          </form>
+        );
+
+      case "tenant_credentials":
+        return (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="tenantSelect">Select Tenant</Label>
+              <Select required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose tenant" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="T001">TechCorp Solutions</SelectItem>
+                  <SelectItem value="T002">Fashion Boutique</SelectItem>
+                  <SelectItem value="T003">Legal Associates</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="tenantLoginId">Tenant Login ID</Label>
+                <Input id="tenantLoginId" placeholder="Username for tenant login" required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="Password" required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="isActive">Status</Label>
+              <Select required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full">Create Login Credentials</Button>
+          </form>
+        );
+
       default:
         return null;
     }
@@ -664,6 +781,34 @@ const AdminForms = () => {
 
   return (
     <div className="space-y-6">
+      {/* Quick Entry Buttons Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Entry Buttons</CardTitle>
+          <CardDescription>
+            Click any button below to add a new entry to the corresponding table
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {forms.map((form) => {
+              const IconComponent = form.icon;
+              return (
+                <Button
+                  key={form.id}
+                  variant="outline"
+                  className="h-20 flex flex-col gap-2"
+                  onClick={() => setSelectedForm(form.id)}
+                >
+                  <IconComponent className="h-6 w-6" />
+                  <span className="text-xs text-center">{form.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Data Entry Forms</CardTitle>
@@ -686,6 +831,17 @@ const AdminForms = () => {
             </TabsList>
             <TabsList className="grid grid-cols-5 w-full mt-2">
               {forms.slice(5, 10).map((form) => {
+                const Icon = form.icon;
+                return (
+                  <TabsTrigger key={form.id} value={form.id} className="flex items-center gap-1">
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{form.label.split(' ')[0]}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+            <TabsList className="grid grid-cols-4 w-full mt-2">
+              {forms.slice(10).map((form) => {
                 const Icon = form.icon;
                 return (
                   <TabsTrigger key={form.id} value={form.id} className="flex items-center gap-1">

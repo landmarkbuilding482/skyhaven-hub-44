@@ -10,6 +10,12 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedbackDropdowns } from "@/hooks/useFeedbackDropdowns";
 
+interface Tenant {
+  id: string;
+  name: string;
+  tenant_id: string;
+}
+
 interface FeedbackSubmissionDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,8 +30,11 @@ export const FeedbackSubmissionDialog = ({
   const { user } = useAuth();
   const { dropdownOptions } = useFeedbackDropdowns();
   const [loading, setLoading] = useState(false);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   
   const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    tenant_id: "",
     type: feedbackType,
     category: "",
     description: "",
@@ -36,6 +45,23 @@ export const FeedbackSubmissionDialog = ({
   useEffect(() => {
     setFormData(prev => ({ ...prev, type: feedbackType }));
   }, [feedbackType]);
+
+  useEffect(() => {
+    const fetchTenants = async () => {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select('id, name, tenant_id')
+        .order('name');
+      
+      if (!error && data) {
+        setTenants(data);
+      }
+    };
+
+    if (isOpen) {
+      fetchTenants();
+    }
+  }, [isOpen]);
 
   const handleSubmit = async () => {
     if (!formData.category || !formData.description) {
@@ -49,8 +75,8 @@ export const FeedbackSubmissionDialog = ({
       const { error } = await supabase
         .from('feedback_complaints')
         .insert([{
-          date: new Date().toISOString().split('T')[0],
-          tenant_id: user?.role === 'tenant' ? user.id : null,
+          date: formData.date,
+          tenant_id: formData.tenant_id || (user?.role === 'tenant' ? user.id : null),
           type: formData.type,
           category: formData.category,
           description: formData.description,
@@ -65,6 +91,8 @@ export const FeedbackSubmissionDialog = ({
 
       toast.success(`${feedbackType} submitted successfully`);
       setFormData({
+        date: new Date().toISOString().split('T')[0],
+        tenant_id: "",
         type: feedbackType,
         category: "",
         description: "",
@@ -81,7 +109,7 @@ export const FeedbackSubmissionDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Submit {feedbackType}</DialogTitle>
           <DialogDescription>
@@ -90,36 +118,66 @@ export const FeedbackSubmissionDialog = ({
         </DialogHeader>
         
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="type">Type</Label>
-            <Select value={formData.type} onValueChange={(value: 'Feedback' | 'Complaint' | 'Suggestion') => setFormData(prev => ({ ...prev, type: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownOptions.type.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="tenant">Tenant</Label>
+              <Select value={formData.tenant_id} onValueChange={(value) => setFormData(prev => ({ ...prev, tenant_id: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select tenant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tenants.map((tenant) => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name} ({tenant.tenant_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {dropdownOptions.category.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="type">Type</Label>
+              <Select value={formData.type} onValueChange={(value: 'Feedback' | 'Complaint' | 'Suggestion') => setFormData(prev => ({ ...prev, type: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.type.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.category.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div>
@@ -130,7 +188,43 @@ export const FeedbackSubmissionDialog = ({
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder={`Describe your ${feedbackType.toLowerCase()}...`}
               rows={4}
+              required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dropdownOptions.status.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="assigned_to">Assigned To</Label>
+              <Select value={formData.assigned_to} onValueChange={(value) => setFormData(prev => ({ ...prev, assigned_to: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select assignee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {dropdownOptions.assigned_to.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
