@@ -6,6 +6,7 @@ import AdminAnalytics from "./AdminAnalytics";
 import SuperAdminManagement from "./SuperAdminManagement";
 import { FileText, Database, BarChart3, Settings, Shield } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import DataTablesSelector from "@/components/admin/DataTablesSelector";
 
 const AdminDashboard = () => {
   const { hasPagePermission, hasRole } = usePermissions();
@@ -18,6 +19,9 @@ const AdminDashboard = () => {
           Manage building operations, tenant data, and analytics
         </p>
       </div>
+
+      {/* Data Tables Selector */}
+      {hasPagePermission('data-tables') && <DataTablesSelector />}
 
       <Tabs defaultValue="analytics" className="space-y-6">
         <TabsList className={`grid w-full ${hasRole('superadmin') ? 'grid-cols-4' : 'grid-cols-3'}`}>
