@@ -6,12 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, User, FileText, CreditCard, Wrench, Zap, MessageSquare, DollarSign, Package, Building, Car } from "lucide-react";
+import { CreditCard, Wrench, Zap, MessageSquare, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useFeedbackDropdowns } from "@/hooks/useFeedbackDropdowns";
-import TenantForm from "@/components/tenants/TenantForm";
 
 const AdminForms = () => {
   const { hasTablePermission } = usePermissions();
@@ -19,31 +18,14 @@ const AdminForms = () => {
   
   const [tenants, setTenants] = useState<Array<{id: string, name: string}>>([]);
   
-  // Dialog states for each table
-  const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
-  const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
+  // Dialog states for the 5 forms
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [isRevenueExpenseDialogOpen, setIsRevenueExpenseDialogOpen] = useState(false);
-  const [isAssetInventoryDialogOpen, setIsAssetInventoryDialogOpen] = useState(false);
-  const [isTenantDialogOpen, setIsTenantDialogOpen] = useState(false);
-  const [isLeaseDialogOpen, setIsLeaseDialogOpen] = useState(false);
   const [isRentDialogOpen, setIsRentDialogOpen] = useState(false);
   
-  // Form states (same as in AdminDataTables)
-  const [floorForm, setFloorForm] = useState({
-    floor: "",
-    type: "",
-    square_meters_available: 0,
-    square_meters_occupied: 0
-  });
-  
-  const [parkingForm, setParkingForm] = useState({
-    company: "",
-    spots_allowed: 0
-  });
-
+  // Form states for the 5 forms
   const [maintenanceForm, setMaintenanceForm] = useState({
     date_reported: new Date().toISOString().split('T')[0],
     floor: "",
@@ -80,27 +62,6 @@ const AdminForms = () => {
     amount: 0
   });
 
-  const [assetInventoryForm, setAssetInventoryForm] = useState({
-    asset_name: "",
-    category: "",
-    purchase_date: new Date().toISOString().split('T')[0],
-    value: 0,
-    condition: "Good",
-    last_maintenance: "",
-    next_maintenance: "",
-    warranty_month: "",
-    warranty_year: ""
-  });
-
-  const [leaseForm, setLeaseForm] = useState({
-    tenant_id: "",
-    lease_start: "",
-    lease_end: "",
-    monthly_rent: 0,
-    terms_summary: "",
-    tenant_reference: ""
-  });
-
   const [rentForm, setRentForm] = useState({
     tenant_id: "",
     payment_date: new Date().toISOString().split('T')[0],
@@ -131,47 +92,15 @@ const AdminForms = () => {
     expenseCategories: ["Maintenance", "Utilities", "Insurance", "Property Tax", "Management Fees", "Marketing", "Legal Fees", "Office Supplies", "Other Expenses"]
   });
 
-  const [assetInventoryDropdownOptions] = useState({
-    category: ["Furniture", "Electronics", "HVAC Equipment", "Office Equipment", "Security Systems", "Maintenance Tools", "Other"],
-    condition: ["Excellent", "Good", "Needs Repairment", "Needs Replacement"]
-  });
 
   // Available table entry buttons
   const tableEntryButtons = [
-    { 
-      id: "tenants", 
-      label: "Add Tenant", 
-      icon: User, 
-      permission: "tenants",
-      dialog: () => setIsTenantDialogOpen(true)
-    },
-    { 
-      id: "lease_agreements", 
-      label: "Add Lease Agreement", 
-      icon: FileText, 
-      permission: "lease_agreements",
-      dialog: () => setIsLeaseDialogOpen(true)
-    },
     { 
       id: "rent_payments", 
       label: "Add Rent Payment", 
       icon: CreditCard, 
       permission: "rent_payments",
       dialog: () => setIsRentDialogOpen(true)
-    },
-    { 
-      id: "floor_occupancy", 
-      label: "Add Floor Occupancy", 
-      icon: Building, 
-      permission: "floor_occupancy",
-      dialog: () => setIsFloorDialogOpen(true)
-    },
-    { 
-      id: "parking_allocations", 
-      label: "Add Parking Allocation", 
-      icon: Car, 
-      permission: "parking_allocations",
-      dialog: () => setIsParkingDialogOpen(true)
     },
     { 
       id: "maintenance_repairs", 
@@ -201,13 +130,6 @@ const AdminForms = () => {
       permission: "revenue_expenses",
       dialog: () => setIsRevenueExpenseDialogOpen(true)
     },
-    { 
-      id: "asset_inventory", 
-      label: "Add Asset", 
-      icon: Package, 
-      permission: "asset_inventory",
-      dialog: () => setIsAssetInventoryDialogOpen(true)
-    },
   ];
 
   // Filter buttons based on user permissions
@@ -232,36 +154,7 @@ const AdminForms = () => {
     fetchTenants();
   }, []);
 
-  // Submit handlers for each form (same logic as AdminDataTables)
-  const handleFloorSubmit = async () => {
-    const { error } = await supabase
-      .from('floor_occupancy')
-      .insert([floorForm]);
-    
-    if (error) {
-      toast.error('Failed to create floor data');
-      return;
-    }
-    
-    toast.success('Floor data created successfully');
-    setIsFloorDialogOpen(false);
-    setFloorForm({ floor: "", type: "", square_meters_available: 0, square_meters_occupied: 0 });
-  };
-
-  const handleParkingSubmit = async () => {
-    const { error } = await supabase
-      .from('parking_allocations')
-      .insert([parkingForm]);
-    
-    if (error) {
-      toast.error('Failed to create parking allocation');
-      return;
-    }
-    
-    toast.success('Parking allocation created successfully');
-    setIsParkingDialogOpen(false);
-    setParkingForm({ company: "", spots_allowed: 0 });
-  };
+  // Submit handlers for the 5 forms
 
   const handleMaintenanceSubmit = async () => {
     const { error } = await supabase
@@ -351,58 +244,6 @@ const AdminForms = () => {
     });
   };
 
-  const handleAssetInventorySubmit = async () => {
-    const { error } = await supabase
-      .from('asset_inventory')
-      .insert([{
-        ...assetInventoryForm,
-        last_maintenance: assetInventoryForm.last_maintenance || null,
-        next_maintenance: assetInventoryForm.next_maintenance || null,
-        warranty_month: assetInventoryForm.warranty_month ? parseInt(assetInventoryForm.warranty_month) : null,
-        warranty_year: assetInventoryForm.warranty_year ? parseInt(assetInventoryForm.warranty_year) : null
-      }]);
-    
-    if (error) {
-      toast.error('Failed to create asset entry');
-      return;
-    }
-    
-    toast.success('Asset entry created successfully');
-    setIsAssetInventoryDialogOpen(false);
-    setAssetInventoryForm({
-      asset_name: "",
-      category: "",
-      purchase_date: new Date().toISOString().split('T')[0],
-      value: 0,
-      condition: "Good",
-      last_maintenance: "",
-      next_maintenance: "",
-      warranty_month: "",
-      warranty_year: ""
-    });
-  };
-
-  const handleLeaseSubmit = async () => {
-    const { error } = await supabase
-      .from('lease_agreements')
-      .insert([leaseForm]);
-    
-    if (error) {
-      toast.error('Failed to create lease agreement');
-      return;
-    }
-    
-    toast.success('Lease agreement created successfully');
-    setIsLeaseDialogOpen(false);
-    setLeaseForm({
-      tenant_id: "",
-      lease_start: "",
-      lease_end: "",
-      monthly_rent: 0,
-      terms_summary: "",
-      tenant_reference: ""
-    });
-  };
 
   const handleRentSubmit = async () => {
     const { error } = await supabase
@@ -427,10 +268,6 @@ const AdminForms = () => {
     });
   };
 
-  const handleTenantFormSuccess = () => {
-    setIsTenantDialogOpen(false);
-    fetchTenants(); // Refresh tenant list
-  };
 
   return (
     <div className="space-y-6">
@@ -447,29 +284,19 @@ const AdminForms = () => {
               const Icon = button.icon;
               return (
                 <Dialog key={button.id} open={
-                  button.id === "tenants" ? isTenantDialogOpen :
-                  button.id === "lease_agreements" ? isLeaseDialogOpen :
                   button.id === "rent_payments" ? isRentDialogOpen :
-                  button.id === "floor_occupancy" ? isFloorDialogOpen :
-                  button.id === "parking_allocations" ? isParkingDialogOpen :
                   button.id === "maintenance_repairs" ? isMaintenanceDialogOpen :
                   button.id === "utilities" ? isUtilitiesDialogOpen :
                   button.id === "feedback_complaints" ? isFeedbackDialogOpen :
                   button.id === "revenue_expenses" ? isRevenueExpenseDialogOpen :
-                  button.id === "asset_inventory" ? isAssetInventoryDialogOpen :
                   false
                 } onOpenChange={(open) => {
                   if (!open) {
-                    if (button.id === "tenants") setIsTenantDialogOpen(false);
-                    if (button.id === "lease_agreements") setIsLeaseDialogOpen(false);
                     if (button.id === "rent_payments") setIsRentDialogOpen(false);
-                    if (button.id === "floor_occupancy") setIsFloorDialogOpen(false);
-                    if (button.id === "parking_allocations") setIsParkingDialogOpen(false);
                     if (button.id === "maintenance_repairs") setIsMaintenanceDialogOpen(false);
                     if (button.id === "utilities") setIsUtilitiesDialogOpen(false);
                     if (button.id === "feedback_complaints") setIsFeedbackDialogOpen(false);
                     if (button.id === "revenue_expenses") setIsRevenueExpenseDialogOpen(false);
-                    if (button.id === "asset_inventory") setIsAssetInventoryDialogOpen(false);
                   }
                 }}>
                   <DialogTrigger asChild>
@@ -490,21 +317,107 @@ const AdminForms = () => {
                       </DialogTitle>
                     </DialogHeader>
                     
-                    {/* Tenant Form */}
-                    {button.id === "tenants" && (
-                      <TenantForm
-                        onSuccess={handleTenantFormSuccess}
-                        onCancel={() => setIsTenantDialogOpen(false)}
-                      />
-                    )}
 
-                    {/* Floor Occupancy Form */}
-                    {button.id === "floor_occupancy" && (
+                    {/* Rent Payment Form */}
+                    {button.id === "rent_payments" && (
                       <div className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
+                            <Label>Tenant</Label>
+                            <Select value={rentForm.tenant_id} onValueChange={(value) => setRentForm({...rentForm, tenant_id: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select tenant" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tenants.map(tenant => (
+                                  <SelectItem key={tenant.id} value={tenant.id}>
+                                    {tenant.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Payment Date</Label>
+                            <Input
+                              type="date"
+                              value={rentForm.payment_date}
+                              onChange={(e) => setRentForm({...rentForm, payment_date: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Amount</Label>
+                            <Input
+                              type="number"
+                              value={rentForm.amount}
+                              onChange={(e) => setRentForm({...rentForm, amount: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Payment Method</Label>
+                            <Select value={rentForm.method} onValueChange={(value) => setRentForm({...rentForm, method: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="Check">Check</SelectItem>
+                                <SelectItem value="Credit Card">Credit Card</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Transaction ID</Label>
+                            <Input
+                              value={rentForm.transaction_id}
+                              onChange={(e) => setRentForm({...rentForm, transaction_id: e.target.value})}
+                              placeholder="Transaction reference"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Month/Year Range</Label>
+                            <Input
+                              value={rentForm.month_year_range}
+                              onChange={(e) => setRentForm({...rentForm, month_year_range: e.target.value})}
+                              placeholder="e.g., Jan 2024"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tenant Reference</Label>
+                          <Input
+                            value={rentForm.tenant_reference}
+                            onChange={(e) => setRentForm({...rentForm, tenant_reference: e.target.value})}
+                            placeholder="Additional reference"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleRentSubmit}>Add Rent Payment</Button>
+                        </DialogFooter>
+                      </div>
+                    )}
+
+                    {/* Maintenance Request Form */}
+                    {button.id === "maintenance_repairs" && (
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Date Reported</Label>
+                            <Input
+                              type="date"
+                              value={maintenanceForm.date_reported}
+                              onChange={(e) => setMaintenanceForm({...maintenanceForm, date_reported: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-2">
                             <Label>Floor</Label>
-                            <Select value={floorForm.floor} onValueChange={(value) => setFloorForm({...floorForm, floor: value})}>
+                            <Select value={maintenanceForm.floor} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, floor: value})}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select floor" />
                               </SelectTrigger>
@@ -517,73 +430,328 @@ const AdminForms = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Type</Label>
-                            <Select value={floorForm.type} onValueChange={(value) => setFloorForm({...floorForm, type: value})}>
+                            <Label>Issue Reporter</Label>
+                            <Select value={maintenanceForm.issue_reporter} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, issue_reporter: value})}>
                               <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue placeholder="Select reporter" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="office">Office</SelectItem>
-                                <SelectItem value="retail">Retail</SelectItem>
-                                <SelectItem value="warehouse">Warehouse</SelectItem>
-                                <SelectItem value="mixed">Mixed Use</SelectItem>
+                                {dropdownOptions.issueReporter.map(reporter => (
+                                  <SelectItem key={reporter} value={reporter}>
+                                    {reporter}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Issue Type</Label>
+                            <Select value={maintenanceForm.issue_type} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, issue_type: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select issue type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dropdownOptions.issueType.map(type => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Available (sq meters)</Label>
+                            <Label>Material Affected</Label>
+                            <Select value={maintenanceForm.material_affected} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, material_affected: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select material" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dropdownOptions.materialAffected.map(material => (
+                                  <SelectItem key={material} value={material}>
+                                    {material}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Assigned Vendor</Label>
+                            <Select value={maintenanceForm.assigned_vendor} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, assigned_vendor: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select vendor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dropdownOptions.assignedVendor.map(vendor => (
+                                  <SelectItem key={vendor} value={vendor}>
+                                    {vendor}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Cost</Label>
                             <Input
                               type="number"
-                              value={floorForm.square_meters_available}
-                              onChange={(e) => setFloorForm({...floorForm, square_meters_available: parseFloat(e.target.value) || 0})}
+                              value={maintenanceForm.cost}
+                              onChange={(e) => setMaintenanceForm({...maintenanceForm, cost: parseFloat(e.target.value) || 0})}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label>Occupied (sq meters)</Label>
-                            <Input
-                              type="number"
-                              value={floorForm.square_meters_occupied}
-                              onChange={(e) => setFloorForm({...floorForm, square_meters_occupied: parseFloat(e.target.value) || 0})}
-                            />
+                            <Label>Status</Label>
+                            <Select value={maintenanceForm.status} onValueChange={(value) => setMaintenanceForm({...maintenanceForm, status: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dropdownOptions.status.map(status => (
+                                  <SelectItem key={status} value={status}>
+                                    {status}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            value={maintenanceForm.description}
+                            onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                            placeholder="Describe the maintenance issue"
+                          />
+                        </div>
                         <DialogFooter>
-                          <Button onClick={handleFloorSubmit}>Add Floor Data</Button>
+                          <Button onClick={handleMaintenanceSubmit}>Add Maintenance Request</Button>
                         </DialogFooter>
                       </div>
                     )}
 
-                    {/* Parking Allocation Form */}
-                    {button.id === "parking_allocations" && (
+                    {/* Utilities Form */}
+                    {button.id === "utilities" && (
                       <div className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Company</Label>
+                            <Label>Date</Label>
                             <Input
-                              value={parkingForm.company}
-                              onChange={(e) => setParkingForm({...parkingForm, company: e.target.value})}
-                              placeholder="Company name"
+                              type="date"
+                              value={utilitiesForm.date}
+                              onChange={(e) => setUtilitiesForm({...utilitiesForm, date: e.target.value})}
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label>Spots Allowed</Label>
-                            <Input
-                              type="number"
-                              value={parkingForm.spots_allowed}
-                              onChange={(e) => setParkingForm({...parkingForm, spots_allowed: parseInt(e.target.value) || 0})}
-                            />
+                            <Label>Type</Label>
+                            <Select value={utilitiesForm.type} onValueChange={(value) => setUtilitiesForm({...utilitiesForm, type: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select utility type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {utilitiesDropdownOptions.type.map(type => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label>Amount</Label>
+                          <Input
+                            type="number"
+                            value={utilitiesForm.amount}
+                            onChange={(e) => setUtilitiesForm({...utilitiesForm, amount: parseFloat(e.target.value) || 0})}
+                          />
+                        </div>
                         <DialogFooter>
-                          <Button onClick={handleParkingSubmit}>Add Parking Allocation</Button>
+                          <Button onClick={handleUtilitiesSubmit}>Add Utility Entry</Button>
                         </DialogFooter>
                       </div>
                     )}
 
-                    {/* Additional forms would continue here in the same pattern... */}
+                    {/* Feedback Form */}
+                    {button.id === "feedback_complaints" && (
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Date</Label>
+                            <Input
+                              type="date"
+                              value={feedbackForm.date}
+                              onChange={(e) => setFeedbackForm({...feedbackForm, date: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Tenant</Label>
+                            <Select value={feedbackForm.tenant_id} onValueChange={(value) => setFeedbackForm({...feedbackForm, tenant_id: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select tenant" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No specific tenant</SelectItem>
+                                {tenants.map(tenant => (
+                                  <SelectItem key={tenant.id} value={tenant.id}>
+                                    {tenant.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Type</Label>
+                            <Select value={feedbackForm.type} onValueChange={(value) => setFeedbackForm({...feedbackForm, type: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {feedbackDropdownOptions.type?.map(type => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={feedbackForm.category} onValueChange={(value) => setFeedbackForm({...feedbackForm, category: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {feedbackDropdownOptions.category?.map(category => (
+                                  <SelectItem key={category} value={category}>
+                                    {category}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Status</Label>
+                            <Select value={feedbackForm.status} onValueChange={(value) => setFeedbackForm({...feedbackForm, status: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {feedbackDropdownOptions.status?.map(status => (
+                                  <SelectItem key={status} value={status}>
+                                    {status}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Assigned To</Label>
+                            <Select value={feedbackForm.assigned_to} onValueChange={(value) => setFeedbackForm({...feedbackForm, assigned_to: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select assignee" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {feedbackDropdownOptions.assigned_to?.map(assignee => (
+                                  <SelectItem key={assignee} value={assignee}>
+                                    {assignee}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            value={feedbackForm.description}
+                            onChange={(e) => setFeedbackForm({...feedbackForm, description: e.target.value})}
+                            placeholder="Describe the feedback or complaint"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleFeedbackSubmit}>Add Feedback Entry</Button>
+                        </DialogFooter>
+                      </div>
+                    )}
+
+                    {/* Revenue/Expense Form */}
+                    {button.id === "revenue_expenses" && (
+                      <div className="space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Date</Label>
+                            <Input
+                              type="date"
+                              value={revenueExpenseForm.date}
+                              onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, date: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Type</Label>
+                            <Select value={revenueExpenseForm.type} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, type: value, category: ""})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {revenueExpenseDropdownOptions.type.map(type => (
+                                  <SelectItem key={type} value={type}>
+                                    {type}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Category</Label>
+                            <Select value={revenueExpenseForm.category} onValueChange={(value) => setRevenueExpenseForm({...revenueExpenseForm, category: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(revenueExpenseForm.type === "Revenue" 
+                                  ? revenueExpenseDropdownOptions.revenueCategories 
+                                  : revenueExpenseDropdownOptions.expenseCategories
+                                ).map(category => (
+                                  <SelectItem key={category} value={category}>
+                                    {category}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Amount</Label>
+                            <Input
+                              type="number"
+                              value={revenueExpenseForm.amount}
+                              onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, amount: parseFloat(e.target.value) || 0})}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea
+                            value={revenueExpenseForm.description}
+                            onChange={(e) => setRevenueExpenseForm({...revenueExpenseForm, description: e.target.value})}
+                            placeholder="Describe the revenue or expense"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button onClick={handleRevenueExpenseSubmit}>Add Revenue/Expense</Button>
+                        </DialogFooter>
+                      </div>
+                    )}
 
                   </DialogContent>
                 </Dialog>
