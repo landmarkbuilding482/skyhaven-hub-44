@@ -13,7 +13,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useFeedbackDropdowns } from "@/hooks/useFeedbackDropdowns";
 
 const AdminForms = () => {
-  const { hasTablePermission } = usePermissions();
+  const { hasTablePermission, hasPagePermission } = usePermissions();
   const { dropdownOptions: feedbackDropdownOptions } = useFeedbackDropdowns();
   
   const [tenants, setTenants] = useState<Array<{id: string, name: string}>>([]);
@@ -132,8 +132,10 @@ const AdminForms = () => {
     },
   ];
 
-  // Filter buttons based on user permissions
-  const availableButtons = tableEntryButtons.filter(button => hasTablePermission(button.permission));
+  // If user has forms page permission, show all forms; otherwise filter by table permissions
+  const availableButtons = hasPagePermission('forms') 
+    ? tableEntryButtons 
+    : tableEntryButtons.filter(button => hasTablePermission(button.permission));
 
   // Fetch tenants for dropdowns
   const fetchTenants = async () => {
