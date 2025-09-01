@@ -8,7 +8,10 @@ import { FileText, Database, BarChart3, Settings, Shield } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminDashboard = () => {
-  const { hasPagePermission, hasRole } = usePermissions();
+  const { hasPagePermission, hasRole, hasTablePermission } = usePermissions();
+  
+  // Check if user has any table permissions
+  const hasAnyTablePermission = ['tenants', 'lease_agreements', 'rent_payments', 'floor_occupancy', 'maintenance_repairs', 'utilities', 'feedback_complaints', 'revenue_expenses', 'asset_inventory'].some(table => hasTablePermission(table));
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -33,7 +36,7 @@ const AdminDashboard = () => {
               Forms
             </TabsTrigger>
           )}
-          {hasPagePermission('data-tables') && (
+          {(hasPagePermission('data-tables') || hasAnyTablePermission) && (
             <TabsTrigger value="data" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Data Tables
@@ -59,7 +62,7 @@ const AdminDashboard = () => {
           </TabsContent>
         )}
 
-        {hasPagePermission('data-tables') && (
+        {(hasPagePermission('data-tables') || hasAnyTablePermission) && (
           <TabsContent value="data">
             <AdminDataTables />
           </TabsContent>
