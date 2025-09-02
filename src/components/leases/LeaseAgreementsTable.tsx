@@ -146,12 +146,13 @@ export const LeaseAgreementsTable = () => {
         return;
       }
 
-      // Create a blob URL and open in new tab
+      // Create a blob URL and open in modal
       const fileUrl = URL.createObjectURL(fileData);
-      window.open(fileUrl, '_blank');
-      
-      // Clean up the URL after a delay to free memory
-      setTimeout(() => URL.revokeObjectURL(fileUrl), 5000);
+      setPreviewModal({
+        isOpen: true,
+        fileUrl,
+        fileName: `${lease.tenants?.name || 'Contract'} - Lease Agreement.pdf`
+      });
     } catch (error) {
       console.error('Error viewing contract:', error);
       toast.error('Failed to view contract');
@@ -454,6 +455,53 @@ export const LeaseAgreementsTable = () => {
           </Table>
         )}
 
+        {/* PDF Preview Modal */}
+        <Dialog 
+          open={previewModal.isOpen} 
+          onOpenChange={(open) => {
+            if (!open && previewModal.fileUrl) {
+              URL.revokeObjectURL(previewModal.fileUrl);
+            }
+            setPreviewModal({ isOpen: open, fileUrl: null, fileName: '' });
+          }}
+        >
+          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+            <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <DialogTitle className="text-lg font-semibold">
+                Contract Preview: {previewModal.fileName}
+              </DialogTitle>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (previewModal.fileUrl) {
+                      const link = document.createElement('a');
+                      link.href = previewModal.fileUrl;
+                      link.download = previewModal.fileName;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      toast.success('Contract downloaded successfully');
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex-1 border rounded-lg overflow-hidden bg-muted/10">
+              {previewModal.fileUrl && (
+                <iframe
+                  src={previewModal.fileUrl}
+                  className="w-full h-full border-0"
+                  title="Contract PDF Preview"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogContent>
