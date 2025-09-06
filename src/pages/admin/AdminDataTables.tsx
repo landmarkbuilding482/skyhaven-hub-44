@@ -12,6 +12,7 @@ import { Eye, Upload, Edit, Trash2, Plus } from "lucide-react";
 import TenantsTable from "@/components/tenants/TenantsTable";
 import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
 import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
+import VendorContractorsTable from "@/components/vendor-contractors/VendorContractorsTable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -259,6 +260,7 @@ const AdminDataTables = () => {
     { value: "tenantsManagement", label: "Tenants Management (Live)", permission: "tenants" },
     { value: "leaseAgreements", label: "Lease Agreements Table", permission: "lease_agreements" },
     { value: "rentPaymentsLive", label: "Rent Payments (Live)", permission: "rent_payments" },
+    { value: "vendorContractors", label: "Vendor Contractors Table", permission: "vendor_contractor_contracts" },
     { value: "occupancy", label: "Occupancy Table", permission: "floor_occupancy" },
     { value: "maintenance", label: "Maintenance & Repairs Table", permission: "maintenance_repairs" },
     { value: "utilities", label: "Utilities Table", permission: "utilities" },
@@ -1311,6 +1313,9 @@ const AdminDataTables = () => {
     }
     if (selectedTable === 'rentPaymentsLive') {
       return <RentPaymentsTable />;
+    }
+    if (selectedTable === 'vendorContractors') {
+      return <VendorContractorsTable />;
     }
 
     if (selectedTable === 'occupancy') {

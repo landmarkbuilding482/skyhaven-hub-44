@@ -273,6 +273,30 @@ export type Database = {
         }
         Relationships: []
       }
+      paid_parking: {
+        Row: {
+          amount: number
+          created_at: string | null
+          date: string
+          id: string
+          number_of_vehicles: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          date: string
+          id?: string
+          number_of_vehicles: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          date?: string
+          id?: string
+          number_of_vehicles?: number
+        }
+        Relationships: []
+      }
       parking_allocations: {
         Row: {
           company: string
@@ -519,6 +543,78 @@ export type Database = {
           date?: string
           id?: string
           type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendor_contractor_activity_logs: {
+        Row: {
+          activity_type: string
+          contractor_name: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          rating: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          activity_type: string
+          contractor_name: string
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          rating?: number | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string
+          contractor_name?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          rating?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vendor_contractor_contracts: {
+        Row: {
+          contract_file_path: string | null
+          contractor_name: string
+          created_at: string
+          description: string
+          end_date: string
+          id: string
+          service_type: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          contract_file_path?: string | null
+          contractor_name: string
+          created_at?: string
+          description: string
+          end_date: string
+          id?: string
+          service_type: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          contract_file_path?: string | null
+          contractor_name?: string
+          created_at?: string
+          description?: string
+          end_date?: string
+          id?: string
+          service_type?: string
+          start_date?: string
           updated_at?: string
         }
         Relationships: []
