@@ -40,7 +40,7 @@ const InspectionComplianceTable = () => {
     date: "",
     description: "",
     status: "Pending",
-    rating: "",
+    rating: "none",
     report_file: null as File | null,
   });
 
@@ -101,7 +101,7 @@ const InspectionComplianceTable = () => {
         date: formData.date,
         description: formData.description,
         status: formData.status,
-        rating: formData.rating ? parseInt(formData.rating) : null,
+        rating: formData.rating && formData.rating !== "none" ? parseInt(formData.rating) : null,
         report_file_path: reportFilePath,
       };
 
@@ -140,7 +140,7 @@ const InspectionComplianceTable = () => {
         date: "",
         description: "",
         status: "Pending",
-        rating: "",
+        rating: "none",
         report_file: null,
       });
       fetchReports();
@@ -165,7 +165,7 @@ const InspectionComplianceTable = () => {
       date: report.date,
       description: report.description,
       status: report.status,
-      rating: report.rating?.toString() || "",
+      rating: report.rating?.toString() || "none",
       report_file: null,
     });
     setIsDialogOpen(true);
@@ -276,7 +276,7 @@ const InspectionComplianceTable = () => {
                   date: "",
                   description: "",
                   status: "Pending",
-                  rating: "",
+                  rating: "none",
                   report_file: null,
                 });
               }}>
@@ -372,7 +372,7 @@ const InspectionComplianceTable = () => {
                         <SelectValue placeholder="Select rating" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No rating</SelectItem>
+                        <SelectItem value="none">No rating</SelectItem>
                         <SelectItem value="1">1 Star</SelectItem>
                         <SelectItem value="2">2 Stars</SelectItem>
                         <SelectItem value="3">3 Stars</SelectItem>
