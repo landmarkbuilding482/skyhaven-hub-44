@@ -178,6 +178,45 @@ export type Database = {
         }
         Relationships: []
       }
+      inspection_compliance_reports: {
+        Row: {
+          created_at: string
+          date: string
+          description: string
+          id: string
+          inspection_type: string
+          inspector: string
+          rating: number | null
+          report_file_path: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          description: string
+          id?: string
+          inspection_type: string
+          inspector: string
+          rating?: number | null
+          report_file_path?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          inspection_type?: string
+          inspector?: string
+          rating?: number | null
+          report_file_path?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lease_agreements: {
         Row: {
           contract_file_path: string | null

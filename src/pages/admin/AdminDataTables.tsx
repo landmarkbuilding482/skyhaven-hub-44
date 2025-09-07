@@ -13,6 +13,7 @@ import TenantsTable from "@/components/tenants/TenantsTable";
 import { LeaseAgreementsTable } from "@/components/leases/LeaseAgreementsTable";
 import RentPaymentsTable from "@/components/rent-payments/RentPaymentsTable";
 import VendorContractorsTable from "@/components/vendor-contractors/VendorContractorsTable";
+import InspectionComplianceTable from "@/components/inspection-compliance/InspectionComplianceTable";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -261,6 +262,7 @@ const AdminDataTables = () => {
     { value: "leaseAgreements", label: "Lease Agreements Table", permission: "lease_agreements" },
     { value: "rentPaymentsLive", label: "Rent Payments (Live)", permission: "rent_payments" },
     { value: "vendorContractors", label: "Vendor Contractors Table", permission: "vendor_contractor_contracts" },
+    { value: "inspectionCompliance", label: "Inspection & Compliance Reports", permission: "inspection_compliance_reports" },
     { value: "occupancy", label: "Occupancy Table", permission: "floor_occupancy" },
     { value: "maintenance", label: "Maintenance & Repairs Table", permission: "maintenance_repairs" },
     { value: "utilities", label: "Utilities Table", permission: "utilities" },
@@ -1316,6 +1318,9 @@ const AdminDataTables = () => {
     }
     if (selectedTable === 'vendorContractors') {
       return <VendorContractorsTable />;
+    }
+    if (selectedTable === 'inspectionCompliance') {
+      return <InspectionComplianceTable />;
     }
 
     if (selectedTable === 'occupancy') {
