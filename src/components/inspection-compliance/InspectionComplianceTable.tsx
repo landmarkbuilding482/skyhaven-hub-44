@@ -382,13 +382,28 @@ const InspectionComplianceTable = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="report_file">Report File</Label>
-                    <Input
-                      id="report_file"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={(e) => setFormData({ ...formData, report_file: e.target.files?.[0] || null })}
-                    />
+                    <Label htmlFor="report_file" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Inspection Report Document
+                    </Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="report_file"
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        onChange={(e) => setFormData({ ...formData, report_file: e.target.files?.[0] || null })}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Upload PDF, DOC, or DOCX files only
+                      </p>
+                      {editingReport?.report_file_path && (
+                        <div className="flex items-center gap-2 text-sm text-green-600">
+                          <Eye className="h-4 w-4" />
+                          Current file exists - upload new file to replace
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2">
@@ -424,6 +439,7 @@ const InspectionComplianceTable = () => {
               <TableHead>Description</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Rating</TableHead>
+              <TableHead>Document</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -444,11 +460,25 @@ const InspectionComplianceTable = () => {
                 </TableCell>
                 <TableCell>{renderStars(report.rating)}</TableCell>
                 <TableCell>
-                  <div className="flex space-x-2">
+                  {report.report_file_path ? (
+                    <Badge variant="default" className="text-xs">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Uploaded
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">
+                      <Upload className="h-3 w-3 mr-1" />
+                      No Document
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-1">
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => handleEdit(report)}
+                      title="Edit Report"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -456,16 +486,28 @@ const InspectionComplianceTable = () => {
                       size="sm"
                       variant="destructive"
                       onClick={() => handleDelete(report.id)}
+                      title="Delete Report"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                    {report.report_file_path && (
+                    {report.report_file_path ? (
                       <Button
                         size="sm"
                         variant="secondary"
                         onClick={() => handleView(report.report_file_path!)}
+                        title="View Report Document"
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(report)}
+                        title="Upload Report Document"
+                        className="text-muted-foreground"
+                      >
+                        <Upload className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
