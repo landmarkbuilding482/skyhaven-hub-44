@@ -68,7 +68,7 @@ export const useAuthState = () => {
           .select('*')
           .eq('username', credentials.username)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         if (error || !data) {
           setLoading(false);
