@@ -31,6 +31,8 @@ const InspectionComplianceTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
   const [editingReport, setEditingReport] = useState<InspectionReport | null>(null);
   const [formData, setFormData] = useState({
     inspector: "",
@@ -204,8 +206,8 @@ const InspectionComplianceTable = () => {
         .createSignedUrl(filePath, 60);
 
       if (data?.signedUrl) {
-        // Open PDF in new tab instead of iframe to avoid browser blocking
-        window.open(data.signedUrl, '_blank');
+        setPreviewUrl(data.signedUrl);
+        setIsPreviewDialogOpen(true);
       }
     } catch (error) {
       console.error("Error viewing file:", error);
@@ -522,6 +524,19 @@ const InspectionComplianceTable = () => {
         )}
       </CardContent>
 
+      {/* File Preview Dialog */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Report Preview</DialogTitle>
+          </DialogHeader>
+          <iframe
+            src={previewUrl}
+            className="w-full h-full border-0"
+            title="Report Preview"
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
