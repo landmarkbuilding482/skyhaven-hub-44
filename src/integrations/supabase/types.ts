@@ -98,6 +98,57 @@ export type Database = {
         }
         Relationships: []
       }
+      external_parking: {
+        Row: {
+          company: string
+          created_at: string
+          fee_paid: number
+          id: string
+          spots_allowed: number
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          fee_paid?: number
+          id?: string
+          spots_allowed?: number
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          fee_paid?: number
+          id?: string
+          spots_allowed?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      external_parking_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          spots_available: number
+          spots_occupied: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spots_available?: number
+          spots_occupied?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spots_available?: number
+          spots_occupied?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       feedback_complaints: {
         Row: {
           assigned_to: string | null

@@ -39,6 +39,19 @@ type ParkingStatistics = {
   spots_occupied: number;
 };
 
+type ExternalParking = {
+  id: string;
+  company: string;
+  spots_allowed: number;
+  fee_paid: number;
+};
+
+type ExternalParkingStatistics = {
+  id: string;
+  spots_available: number;
+  spots_occupied: number;
+};
+
 type MaintenanceRepair = {
   id: string;
   date_reported: string;
@@ -108,6 +121,8 @@ const AdminDataTables = () => {
   const [floorData, setFloorData] = useState<FloorOccupancy[]>([]);
   const [parkingAllocations, setParkingAllocations] = useState<ParkingAllocation[]>([]);
   const [parkingStats, setParkingStats] = useState<ParkingStatistics | null>(null);
+  const [externalParkingData, setExternalParkingData] = useState<ExternalParking[]>([]);
+  const [externalParkingStats, setExternalParkingStats] = useState<ExternalParkingStatistics | null>(null);
   
   // State for maintenance data
   const [maintenanceData, setMaintenanceData] = useState<MaintenanceRepair[]>([]);
@@ -130,6 +145,7 @@ const AdminDataTables = () => {
   // Dialog states
   const [isFloorDialogOpen, setIsFloorDialogOpen] = useState(false);
   const [isParkingDialogOpen, setIsParkingDialogOpen] = useState(false);
+  const [isExternalParkingDialogOpen, setIsExternalParkingDialogOpen] = useState(false);
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const [isUtilitiesDialogOpen, setIsUtilitiesDialogOpen] = useState(false);
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
@@ -147,6 +163,7 @@ const AdminDataTables = () => {
   const [isAssetInventoryDropdownConfigOpen, setIsAssetInventoryDropdownConfigOpen] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorOccupancy | null>(null);
   const [editingParking, setEditingParking] = useState<ParkingAllocation | null>(null);
+  const [editingExternalParking, setEditingExternalParking] = useState<ExternalParking | null>(null);
   const [editingMaintenance, setEditingMaintenance] = useState<MaintenanceRepair | null>(null);
   const [editingUtility, setEditingUtility] = useState<Utility | null>(null);
   const [editingFeedback, setEditingFeedback] = useState<FeedbackComplaint | null>(null);
@@ -169,6 +186,12 @@ const AdminDataTables = () => {
   const [parkingForm, setParkingForm] = useState({
     company: "",
     spots_allowed: 0
+  });
+
+  const [externalParkingForm, setExternalParkingForm] = useState({
+    company: "",
+    spots_allowed: 0,
+    fee_paid: 0
   });
 
   const [maintenanceForm, setMaintenanceForm] = useState({
@@ -317,6 +340,34 @@ const AdminDataTables = () => {
     setParkingStats(data);
   };
 
+  const fetchExternalParkingData = async () => {
+    const { data, error } = await supabase
+      .from('external_parking')
+      .select('*')
+      .order('company');
+    
+    if (error) {
+      toast.error('Failed to fetch external parking data');
+      return;
+    }
+    
+    setExternalParkingData(data || []);
+  };
+
+  const fetchExternalParkingStats = async () => {
+    const { data, error } = await supabase
+      .from('external_parking_statistics')
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Failed to fetch external parking stats:', error);
+      return;
+    }
+    
+    setExternalParkingStats(data);
+  };
+
   // Fetch maintenance data functions
   const fetchMaintenanceData = async () => {
     const { data, error } = await supabase
@@ -435,6 +486,8 @@ const AdminDataTables = () => {
       fetchFloorData();
       fetchParkingAllocations();
       fetchParkingStats();
+      fetchExternalParkingData();
+      fetchExternalParkingStats();
     } else if (selectedTable === 'maintenance') {
       fetchMaintenanceData();
       fetchTenantsList();
@@ -587,6 +640,84 @@ const AdminDataTables = () => {
     
     setParkingStats({ ...parkingStats, [field]: value });
     toast.success('Parking statistics updated');
+  };
+
+  // CRUD functions for external parking
+  const handleExternalParkingSubmit = async () => {
+    if (editingExternalParking) {
+      // Update existing external parking
+      const { error } = await supabase
+        .from('external_parking')
+        .update(externalParkingForm)
+        .eq('id', editingExternalParking.id);
+      
+      if (error) {
+        toast.error('Failed to update external parking');
+        return;
+      }
+      
+      toast.success('External parking updated successfully');
+    } else {
+      // Create new external parking
+      const { error } = await supabase
+        .from('external_parking')
+        .insert([externalParkingForm]);
+      
+      if (error) {
+        toast.error('Failed to create external parking');
+        return;
+      }
+      
+      toast.success('External parking created successfully');
+    }
+    
+    setIsExternalParkingDialogOpen(false);
+    setEditingExternalParking(null);
+    setExternalParkingForm({ company: "", spots_allowed: 0, fee_paid: 0 });
+    fetchExternalParkingData();
+  };
+
+  const handleExternalParkingEdit = (parking: ExternalParking) => {
+    setEditingExternalParking(parking);
+    setExternalParkingForm({
+      company: parking.company,
+      spots_allowed: parking.spots_allowed,
+      fee_paid: parking.fee_paid
+    });
+    setIsExternalParkingDialogOpen(true);
+  };
+
+  const handleExternalParkingDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('external_parking')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Failed to delete external parking');
+      return;
+    }
+    
+    toast.success('External parking deleted successfully');
+    fetchExternalParkingData();
+  };
+
+  // Update external parking statistics
+  const updateExternalParkingStats = async (field: 'spots_available' | 'spots_occupied', value: number) => {
+    if (!externalParkingStats) return;
+    
+    const { error } = await supabase
+      .from('external_parking_statistics')
+      .update({ [field]: value })
+      .eq('id', externalParkingStats.id);
+    
+    if (error) {
+      toast.error('Failed to update external parking statistics');
+      return;
+    }
+    
+    setExternalParkingStats({ ...externalParkingStats, [field]: value });
+    toast.success('External parking statistics updated');
   };
 
   // CRUD functions for maintenance repairs
@@ -1570,6 +1701,149 @@ const AdminDataTables = () => {
                         className="h-full bg-primary rounded-full transition-all" 
                         style={{ 
                           width: `${calculateOccupancyPercentage(parkingStats.spots_occupied, parkingStats.spots_available)}%` 
+                        }} 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* External Parking Table */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">External Parking</h3>
+              <Dialog open={isExternalParkingDialogOpen} onOpenChange={setIsExternalParkingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="default" size="sm" onClick={() => {
+                    setEditingExternalParking(null);
+                    setExternalParkingForm({ company: "", spots_allowed: 0, fee_paid: 0 });
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Entry
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingExternalParking ? 'Edit External Parking' : 'Add External Parking'}</DialogTitle>
+                    <DialogDescription>
+                      {editingExternalParking ? 'Update external parking information' : 'Add new external parking information'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="company" className="text-right">Company</Label>
+                      <Input
+                        id="company"
+                        value={externalParkingForm.company}
+                        onChange={(e) => setExternalParkingForm({ ...externalParkingForm, company: e.target.value })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="spots" className="text-right">Spots Allowed</Label>
+                      <Input
+                        id="spots"
+                        type="number"
+                        value={externalParkingForm.spots_allowed}
+                        onChange={(e) => setExternalParkingForm({ ...externalParkingForm, spots_allowed: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="feePaid" className="text-right">Fee Paid</Label>
+                      <Input
+                        id="feePaid"
+                        type="number"
+                        step="0.01"
+                        value={externalParkingForm.fee_paid}
+                        onChange={(e) => setExternalParkingForm({ ...externalParkingForm, fee_paid: parseFloat(e.target.value) || 0 })}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" onClick={handleExternalParkingSubmit}>
+                      {editingExternalParking ? 'Update' : 'Create'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Company</TableHead>
+                  <TableHead>Spots Allowed</TableHead>
+                  <TableHead>Fee Paid</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {externalParkingData.map((parking) => (
+                  <TableRow key={parking.id}>
+                    <TableCell className="font-medium">{parking.company}</TableCell>
+                    <TableCell>{parking.spots_allowed}</TableCell>
+                    <TableCell>${parking.fee_paid.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleExternalParkingEdit(parking)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleExternalParkingDelete(parking.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* External Parking Overall Statistics */}
+          {externalParkingStats && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4">External Parking - Overall Occupancy</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Spots Available</div>
+                    <div className="text-2xl font-bold text-primary">
+                      <Input 
+                        type="number" 
+                        value={externalParkingStats.spots_available} 
+                        onChange={(e) => updateExternalParkingStats('spots_available', parseInt(e.target.value) || 0)}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent" 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Spots Occupied</div>
+                    <div className="text-2xl font-bold text-primary">
+                      <Input 
+                        type="number" 
+                        value={externalParkingStats.spots_occupied} 
+                        onChange={(e) => updateExternalParkingStats('spots_occupied', parseInt(e.target.value) || 0)}
+                        className="text-2xl font-bold border-none p-0 h-auto bg-transparent" 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-muted-foreground">Occupancy Percentage</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {calculateOccupancyPercentage(externalParkingStats.spots_occupied, externalParkingStats.spots_available)}%
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
+                      <div 
+                        className="h-full bg-primary rounded-full transition-all" 
+                        style={{ 
+                          width: `${calculateOccupancyPercentage(externalParkingStats.spots_occupied, externalParkingStats.spots_available)}%` 
                         }} 
                       />
                     </div>
