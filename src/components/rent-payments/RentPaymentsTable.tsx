@@ -17,6 +17,7 @@ interface RentPayment {
   payment_date: string;
   month_year_range: string;
   amount: number;
+  service_charge: number;
   method: string;
   last_paid_rent_date: string | null;
 }
@@ -32,6 +33,7 @@ interface PaymentFormData {
   payment_date: string;
   month_year_range: string;
   amount: number;
+  service_charge: number;
   method: string;
   last_paid_rent_date: string;
 }
@@ -48,6 +50,7 @@ const RentPaymentsTable = () => {
     payment_date: "",
     month_year_range: "",
     amount: 0,
+    service_charge: 0,
     method: "",
     last_paid_rent_date: ""
   });
@@ -134,6 +137,7 @@ const RentPaymentsTable = () => {
       payment_date: payment.payment_date,
       month_year_range: payment.month_year_range,
       amount: payment.amount,
+      service_charge: payment.service_charge,
       method: payment.method,
       last_paid_rent_date: payment.last_paid_rent_date || ""
     });
@@ -201,6 +205,7 @@ const RentPaymentsTable = () => {
         payment_date: "",
         month_year_range: "",
         amount: 0,
+        service_charge: 0,
         method: "",
         last_paid_rent_date: ""
       });
@@ -253,7 +258,8 @@ const RentPaymentsTable = () => {
                   <TableHead>Tenant</TableHead>
                   <TableHead>Payment Date</TableHead>
                   <TableHead>Month/Year Range</TableHead>
-                  <TableHead>Amount</TableHead>
+                  <TableHead>Rent Fee</TableHead>
+                  <TableHead>Service Charge</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Last Paid Date</TableHead>
                   <TableHead>Actions</TableHead>
@@ -262,7 +268,7 @@ const RentPaymentsTable = () => {
               <TableBody>
                 {rentPayments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       No rent payments found
                     </TableCell>
                   </TableRow>
@@ -283,6 +289,9 @@ const RentPaymentsTable = () => {
                       </TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(payment.amount)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(payment.service_charge)}
                       </TableCell>
                       <TableCell>
                         <Badge className={getPaymentMethodColor(payment.method)}>
@@ -377,13 +386,24 @@ const RentPaymentsTable = () => {
               />
             </div>
             <div>
-              <Label htmlFor="amount">Amount ($)</Label>
+              <Label htmlFor="amount">Rent Fee ($)</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="service_charge">Service Charge ($)</Label>
+              <Input
+                id="service_charge"
+                type="number"
+                step="0.01"
+                value={formData.service_charge}
+                onChange={(e) => setFormData({ ...formData, service_charge: Number(e.target.value) })}
                 required
               />
             </div>

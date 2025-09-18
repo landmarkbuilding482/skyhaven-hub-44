@@ -444,6 +444,7 @@ export type Database = {
           method: string
           month_year_range: string
           payment_date: string
+          service_charge: number | null
           tenant_id: string
           tenant_reference: string | null
           transaction_id: string
@@ -457,6 +458,7 @@ export type Database = {
           method: string
           month_year_range: string
           payment_date: string
+          service_charge?: number | null
           tenant_id: string
           tenant_reference?: string | null
           transaction_id: string
@@ -470,6 +472,7 @@ export type Database = {
           method?: string
           month_year_range?: string
           payment_date?: string
+          service_charge?: number | null
           tenant_id?: string
           tenant_reference?: string | null
           transaction_id?: string
