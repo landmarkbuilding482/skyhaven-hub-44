@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -248,20 +249,22 @@ const TenantsTable = () => {
       </Card>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
               {editingTenant ? 'Edit Tenant' : 'Add New Tenant'}
             </DialogTitle>
           </DialogHeader>
-          <TenantForm
-            tenant={editingTenant}
-            onSuccess={handleFormSuccess}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingTenant(null);
-            }}
-          />
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <TenantForm
+              tenant={editingTenant}
+              onSuccess={handleFormSuccess}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingTenant(null);
+              }}
+            />
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit, Trash2 } from "lucide-react";
@@ -332,122 +333,134 @@ const RentPaymentsTable = () => {
       </Card>
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent>
+        <DialogContent className="max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
               {editingPayment ? 'Edit Payment Record' : 'Add New Payment Record'}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="transaction_id">Transaction ID</Label>
-              <Input
-                id="transaction_id"
-                value={formData.transaction_id}
-                onChange={(e) => setFormData({ ...formData, transaction_id: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="tenant_id">Tenant</Label>
-              <select
-                id="tenant_id"
-                className="w-full p-2 border rounded-md"
-                value={formData.tenant_id}
-                onChange={(e) => setFormData({ ...formData, tenant_id: e.target.value })}
-                required
-              >
-                <option value="">Select Tenant</option>
-                {tenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>
-                    {tenant.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="payment_date">Payment Date</Label>
-              <Input
-                id="payment_date"
-                type="date"
-                value={formData.payment_date}
-                onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="month_year_range">Month/Year Range</Label>
-              <Input
-                id="month_year_range"
-                placeholder="e.g., August 2024 - August 2025"
-                value={formData.month_year_range}
-                onChange={(e) => setFormData({ ...formData, month_year_range: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="amount">Rent Fee ($)</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="service_charge">Service Charge ($)</Label>
-              <Input
-                id="service_charge"
-                type="number"
-                step="0.01"
-                value={formData.service_charge}
-                onChange={(e) => setFormData({ ...formData, service_charge: Number(e.target.value) })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="method">Payment Method</Label>
-              <select
-                id="method"
-                className="w-full p-2 border rounded-md"
-                value={formData.method}
-                onChange={(e) => setFormData({ ...formData, method: e.target.value })}
-                required
-              >
-                <option value="">Select Method</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cash">Cash</option>
-                <option value="check">Check</option>
-                <option value="card">Card</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="last_paid_rent_date">Last Paid Rent Date</Label>
-              <Input
-                id="last_paid_rent_date"
-                type="date"
-                value={formData.last_paid_rent_date}
-                onChange={(e) => setFormData({ ...formData, last_paid_rent_date: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingPayment(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">
-                {editingPayment ? 'Update Payment' : 'Add Payment'}
-              </Button>
-            </div>
-          </form>
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="transaction_id">Transaction ID</Label>
+                <Input
+                  id="transaction_id"
+                  value={formData.transaction_id}
+                  onChange={(e) => setFormData({ ...formData, transaction_id: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="tenant_id">Tenant</Label>
+                <select
+                  id="tenant_id"
+                  className="w-full p-2 border rounded-md"
+                  value={formData.tenant_id}
+                  onChange={(e) => setFormData({ ...formData, tenant_id: e.target.value })}
+                  required
+                >
+                  <option value="">Select Tenant</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="payment_date">Payment Date</Label>
+                <Input
+                  id="payment_date"
+                  type="date"
+                  value={formData.payment_date}
+                  onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="month_year_range">Month/Year Range</Label>
+                <Input
+                  id="month_year_range"
+                  placeholder="e.g., August 2024 - August 2025"
+                  value={formData.month_year_range}
+                  onChange={(e) => setFormData({ ...formData, month_year_range: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="amount">Rent Fee ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="service_charge">Service Charge ($)</Label>
+                <Input
+                  id="service_charge"
+                  type="number"
+                  step="0.01"
+                  value={formData.service_charge}
+                  onChange={(e) => setFormData({ ...formData, service_charge: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="method">Payment Method</Label>
+                <select
+                  id="method"
+                  className="w-full p-2 border rounded-md"
+                  value={formData.method}
+                  onChange={(e) => setFormData({ ...formData, method: e.target.value })}
+                  required
+                >
+                  <option value="">Select Method</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="card">Card</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="last_paid_rent_date">Last Paid Rent Date</Label>
+                <Input
+                  id="last_paid_rent_date"
+                  type="date"
+                  value={formData.last_paid_rent_date}
+                  onChange={(e) => setFormData({ ...formData, last_paid_rent_date: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingPayment(null);
+                    setFormData({
+                      transaction_id: "",
+                      tenant_id: "",
+                      payment_date: "",
+                      month_year_range: "",
+                      amount: 0,
+                      service_charge: 0,
+                      method: "",
+                      last_paid_rent_date: ""
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Saving..." : editingPayment ? "Update Payment" : "Add Payment"}
+                </Button>
+              </div>
+            </form>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>
