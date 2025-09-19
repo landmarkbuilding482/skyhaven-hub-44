@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Users, Building, AlertTriangle, CheckCircle, FileText, Wrench } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { format, differenceInDays } from 'date-fns';
@@ -18,6 +20,11 @@ const AdminAnalytics = () => {
     occupiedSquareMeters: 0
   });
   const [tenantRentData, setTenantRentData] = useState([]);
+  const [rentStatusData, setRentStatusData] = useState([]);
+  const [complaintsStatusData, setComplaintsStatusData] = useState([]);
+  const [maintenanceStatusData, setMaintenanceStatusData] = useState([]);
+  const [showComplaintsDialog, setShowComplaintsDialog] = useState(false);
+  const [showMaintenanceDialog, setShowMaintenanceDialog] = useState(false);
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -35,15 +42,15 @@ const AdminAnalytics = () => {
         .from('tenants')
         .select('id, name');
 
-      // Fetch complaints count
+      // Fetch complaints count and status breakdown
       const { data: complaintsData } = await supabase
         .from('feedback_complaints')
-        .select('id');
+        .select('id, status');
 
-      // Fetch maintenance count
+      // Fetch maintenance count and status breakdown
       const { data: maintenanceData } = await supabase
         .from('maintenance_repairs')
-        .select('id');
+        .select('id, status');
 
       // Fetch occupancy data
       const { data: occupancyData } = await supabase
@@ -109,6 +116,39 @@ const AdminAnalytics = () => {
 
       setTenantRentData(processedTenantRentData);
 
+      // Process rent status data for pie chart
+      const onTimeCount = processedTenantRentData.filter(t => t.status === 'on-time').length;
+      const overdueCount = processedTenantRentData.filter(t => t.status === 'overdue').length;
+      const unknownCount = processedTenantRentData.filter(t => t.status === 'unknown').length;
+
+      setRentStatusData([
+        { name: 'On Time', value: onTimeCount, color: '#22c55e' },
+        { name: 'Overdue', value: overdueCount, color: '#ef4444' },
+        { name: 'Unknown', value: unknownCount, color: '#6b7280' }
+      ].filter(item => item.value > 0));
+
+      // Process complaints status data
+      const complaintsStatusBreakdown = complaintsData?.reduce((acc, complaint) => {
+        acc[complaint.status] = (acc[complaint.status] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      setComplaintsStatusData(Object.entries(complaintsStatusBreakdown).map(([status, count]) => ({
+        status,
+        count
+      })));
+
+      // Process maintenance status data
+      const maintenanceStatusBreakdown = maintenanceData?.reduce((acc, maintenance) => {
+        acc[maintenance.status] = (acc[maintenance.status] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      setMaintenanceStatusData(Object.entries(maintenanceStatusBreakdown).map(([status, count]) => ({
+        status,
+        count
+      })));
+
     } catch (error) {
       console.error('Error fetching analytics data:', error);
     }
@@ -153,7 +193,9 @@ const AdminAnalytics = () => {
       change: "-2",
       trend: "down",
       icon: FileText,
-      description: "All complaints"
+      description: "All complaints",
+      clickable: true,
+      onClick: () => setShowComplaintsDialog(true)
     },
     {
       title: "Total Maintenance",
@@ -161,7 +203,9 @@ const AdminAnalytics = () => {
       change: "+1",
       trend: "up",
       icon: Wrench,
-      description: "Maintenance requests"
+      description: "Maintenance requests",
+      clickable: true,
+      onClick: () => setShowMaintenanceDialog(true)
     }
   ];
 
@@ -173,7 +217,11 @@ const AdminAnalytics = () => {
         {kpiData.map((kpi, index) => {
           const Icon = kpi.icon;
           return (
-            <Card key={index}>
+            <Card 
+              key={index} 
+              className={kpi.clickable ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+              onClick={kpi.onClick}
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -190,6 +238,40 @@ const AdminAnalytics = () => {
           );
         })}
       </div>
+
+      {/* Rent Status Pie Chart */}
+      {rentStatusData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Rent Payment Status Distribution</CardTitle>
+            <CardDescription>Count of tenants by payment status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={rentStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {rentStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tenant Rent Due Table */}
       <Card>
@@ -226,6 +308,40 @@ const AdminAnalytics = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Complaints Status Dialog */}
+      <Dialog open={showComplaintsDialog} onOpenChange={setShowComplaintsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complaints by Status</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {complaintsStatusData.map((item, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                <span className="font-medium">{item.status}</span>
+                <Badge variant="secondary">{item.count}</Badge>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Maintenance Status Dialog */}
+      <Dialog open={showMaintenanceDialog} onOpenChange={setShowMaintenanceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Maintenance by Status</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {maintenanceStatusData.map((item, index) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                <span className="font-medium">{item.status}</span>
+                <Badge variant="secondary">{item.count}</Badge>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
