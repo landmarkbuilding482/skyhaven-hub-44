@@ -7,9 +7,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Edit, Trash2, CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface RentPayment {
   id: string;
@@ -32,7 +36,8 @@ interface PaymentFormData {
   transaction_id: string;
   tenant_id: string;
   payment_date: string;
-  month_year_range: string;
+  month_year_range_start: string;
+  month_year_range_end: string;
   amount: number;
   service_charge: number;
   method: string;
@@ -49,7 +54,8 @@ const RentPaymentsTable = () => {
     transaction_id: "",
     tenant_id: "",
     payment_date: "",
-    month_year_range: "",
+    month_year_range_start: "",
+    month_year_range_end: "",
     amount: 0,
     service_charge: 0,
     method: "",
@@ -132,11 +138,14 @@ const RentPaymentsTable = () => {
 
   const handleEdit = (payment: RentPayment) => {
     setEditingPayment(payment);
+    // Parse existing month_year_range to extract start and end dates
+    const rangeParts = payment.month_year_range.split(' - ');
     setFormData({
       transaction_id: payment.transaction_id,
       tenant_id: payment.tenant_id,
       payment_date: payment.payment_date,
-      month_year_range: payment.month_year_range,
+      month_year_range_start: rangeParts[0] || "",
+      month_year_range_end: rangeParts[1] || "",
       amount: payment.amount,
       service_charge: payment.service_charge,
       method: payment.method,
@@ -175,10 +184,19 @@ const RentPaymentsTable = () => {
     e.preventDefault();
     
     try {
+      // Combine start and end dates for month_year_range
+      const submissionData = {
+        ...formData,
+        month_year_range: `${formData.month_year_range_start} - ${formData.month_year_range_end}`
+      };
+      
+      // Remove the separate start/end fields before submission
+      const { month_year_range_start, month_year_range_end, ...dataToSubmit } = submissionData;
+      
       if (editingPayment) {
         const { error } = await supabase
           .from('rent_payments')
-          .update(formData)
+          .update(dataToSubmit)
           .eq('id', editingPayment.id);
 
         if (error) throw error;
@@ -189,7 +207,7 @@ const RentPaymentsTable = () => {
       } else {
         const { error } = await supabase
           .from('rent_payments')
-          .insert([formData]);
+          .insert([dataToSubmit]);
 
         if (error) throw error;
         toast({
@@ -204,7 +222,8 @@ const RentPaymentsTable = () => {
         transaction_id: "",
         tenant_id: "",
         payment_date: "",
-        month_year_range: "",
+        month_year_range_start: "",
+        month_year_range_end: "",
         amount: 0,
         service_charge: 0,
         method: "",
@@ -377,15 +396,77 @@ const RentPaymentsTable = () => {
                   required
                 />
               </div>
-              <div>
-                <Label htmlFor="month_year_range">Month/Year Range</Label>
-                <Input
-                  id="month_year_range"
-                  placeholder="e.g., August 2024 - August 2025"
-                  value={formData.month_year_range}
-                  onChange={(e) => setFormData({ ...formData, month_year_range: e.target.value })}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="month_year_range_start">Range Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.month_year_range_start && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.month_year_range_start ? (
+                          format(new Date(formData.month_year_range_start), "PPP")
+                        ) : (
+                          <span>Pick start date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.month_year_range_start ? new Date(formData.month_year_range_start) : undefined}
+                        onSelect={(date) => 
+                          setFormData({ 
+                            ...formData, 
+                            month_year_range_start: date ? format(date, "yyyy-MM-dd") : "" 
+                          })
+                        }
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label htmlFor="month_year_range_end">Range End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.month_year_range_end && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.month_year_range_end ? (
+                          format(new Date(formData.month_year_range_end), "PPP")
+                        ) : (
+                          <span>Pick end date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.month_year_range_end ? new Date(formData.month_year_range_end) : undefined}
+                        onSelect={(date) => 
+                          setFormData({ 
+                            ...formData, 
+                            month_year_range_end: date ? format(date, "yyyy-MM-dd") : "" 
+                          })
+                        }
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
               <div>
                 <Label htmlFor="amount">Rent Fee ($)</Label>
@@ -445,7 +526,8 @@ const RentPaymentsTable = () => {
                       transaction_id: "",
                       tenant_id: "",
                       payment_date: "",
-                      month_year_range: "",
+                      month_year_range_start: "",
+                      month_year_range_end: "",
                       amount: 0,
                       service_charge: 0,
                       method: "",
