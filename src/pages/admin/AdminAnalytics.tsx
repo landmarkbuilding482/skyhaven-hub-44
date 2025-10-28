@@ -105,11 +105,9 @@ const AdminAnalytics = () => {
         
         // Get today's date in Kigali timezone
         const today = toZonedTime(new Date(), kigaliTimezone);
-        const lastPaid = new Date(lastPaidDate);
-        const nextDueDate = new Date(lastPaid);
-        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        const dueDate = new Date(lastPaidDate);
         
-        const daysRemaining = differenceInDays(nextDueDate, today);
+        const daysRemaining = differenceInDays(dueDate, today);
         
         return {
           name: tenant.name,
