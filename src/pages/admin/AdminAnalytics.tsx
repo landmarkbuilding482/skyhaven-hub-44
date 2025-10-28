@@ -7,6 +7,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { TrendingUp, TrendingDown, DollarSign, Users, Building, AlertTriangle, CheckCircle, FileText, Wrench } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { format, differenceInDays } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 const AdminAnalytics = () => {
   const [data, setData] = useState({
@@ -86,20 +87,24 @@ const AdminAnalytics = () => {
       });
 
       // Process tenant rent data
+      const kigaliTimezone = 'Africa/Kigali';
       const processedTenantRentData = tenantsWithRent?.map(tenant => {
         const latestPayment = rentPayments?.find(payment => payment.tenant_id === tenant.id);
-        const lastPaidDate = latestPayment?.last_paid_rent_date || tenant.first_payment_date;
         
-        if (!lastPaidDate) {
+        // If no payment record exists, show " - "
+        if (!latestPayment) {
           return {
             name: tenant.name,
             monthlyRent: tenant.monthly_rent,
-            daysDue: 'No payment date',
-            status: 'unknown'
+            daysDue: ' - ',
+            status: 'no-record'
           };
         }
 
-        const today = new Date();
+        const lastPaidDate = latestPayment.last_paid_rent_date;
+        
+        // Get today's date in Kigali timezone
+        const today = toZonedTime(new Date(), kigaliTimezone);
         const lastPaid = new Date(lastPaidDate);
         const nextDueDate = new Date(lastPaid);
         nextDueDate.setMonth(nextDueDate.getMonth() + 1);
@@ -119,12 +124,10 @@ const AdminAnalytics = () => {
       // Process rent status data for pie chart
       const onTimeCount = processedTenantRentData.filter(t => t.status === 'on-time').length;
       const overdueCount = processedTenantRentData.filter(t => t.status === 'overdue').length;
-      const unknownCount = processedTenantRentData.filter(t => t.status === 'unknown').length;
 
       setRentStatusData([
         { name: 'On Time', value: onTimeCount, color: '#22c55e' },
-        { name: 'Overdue', value: overdueCount, color: '#ef4444' },
-        { name: 'Unknown', value: unknownCount, color: '#6b7280' }
+        { name: 'Overdue', value: overdueCount, color: '#ef4444' }
       ].filter(item => item.value > 0));
 
       // Process complaints status data
@@ -296,11 +299,13 @@ const AdminAnalytics = () => {
                   <TableCell>${tenant.monthlyRent}</TableCell>
                   <TableCell>{tenant.daysDue}</TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={tenant.status === 'overdue' ? 'destructive' : 'default'}
-                    >
-                      {tenant.status === 'overdue' ? 'Overdue' : tenant.status === 'on-time' ? 'On Time' : 'Unknown'}
-                    </Badge>
+                    {tenant.status === 'no-record' ? (
+                      <Badge variant="secondary">No Record</Badge>
+                    ) : (
+                      <Badge variant={tenant.status === 'overdue' ? 'destructive' : 'default'}>
+                        {tenant.status === 'overdue' ? 'Overdue' : 'On Time'}
+                      </Badge>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
