@@ -717,10 +717,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_short_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_short_id: { Args: never; Returns: string }
     }
     Enums: {
       user_role: "superadmin" | "admin" | "tenant"
